@@ -201,58 +201,66 @@
               songs))
     (switch-to-buffer b)))
 
-;; (display-album "Nosound" "lightdark")
-;; (lastfm-album-get-info "nosound" "lightdark")
-
-
-;; (display-user-loved-songs 1)
-
-(let ((music-list)
-      (playing-song)
-      (random-play)
+(let ((playing-song)      
       (keep-playing t))
 
-  (defun play ()
-    (when (and music-list keep-playing)
-      (if random-play
-          (setf playing-song (nth (random (length music-list))
-                                  music-list))
-        (setf playing-song (cl-first music-list))
-        (setf music-list (cl-rest music-list)))
+  (defun play (songs)
+    (when keep-playing
+      (setf playing-song (iter-next songs))
       (play-youtube-video (find-youtube-id playing-song))))
 
+  (defun open-youtube ()
+    (browse-url (concat "https://www.youtube.com/watch?v="
+                        (find-youtube-id playing-song))))
+
   (defun stop-playing ()
-    (setf keep-playing nil)
-    (setf playing-song nil)
+    (setf keep-playing nil
+          playing-song nil)
     (mpv-kill))
 
-  (defun skip-song ()
-    (mpv-kill))
+  (defun skip-song () (mpv-kill))
+  (defun playing-song () playing-song)
 
-  (defun playing-song ()
-    playing-song)
-
-  (defun play-list-of-songs (songs random)    
-    (setf music-list songs)
-    (setf random-play random)
+  (defun play-songs (songs)    
     ;; Play the next song after the player exits (song finished, song skipped, etc.)
     (setf mpv-on-exit-hook
           (lambda (&rest event)
             (unless event
               ;; A kill event took place.
-              (play))))
-    ;; Start playing.
-    (play)))
+              (play songs))))
+    (play songs)))
+               
+(iter-defun user-top-songs ()
+  (let ((songs (lastfm-user-get-loved-tracks :limit 50)))
+    (while t
+      (let ((song (seq-random-elt songs)))
+        (iter-yield (format "%s %s" (cl-first song) (cl-second song)))))))
 
-(defun play-user-loved-songs (random)
-  (let ((songs (lastfm-user-get-loved-tracks :limit 12)))
-    (play-list-of-songs songs random)))
-                  
-(defun display-skeleton-hands ()
-  (interactive)
-  (display-artist "skeleton hands"))
+(iter-defun artist-similar-songs (name)
+  (while t
+    (let* ((artist (cl-first
+                    (seq-random-elt
+                     (lastfm-artist-get-similar name))))
+           (song (cl-first
+                  (seq-random-elt
+                   (lastfm-artist-get-top-tracks artist)))))
+      (iter-yield (format "%s %s" artist song)))))
 
-(defun display-darkwave-tag ()
-  (interactive)
-  (display-tag "darkwave"))
+(iter-defun tag-similar-songs (name)
+  (while t
+    (let* ((artist (cl-first
+                    (seq-random-elt
+                     (lastfm-tag-get-top-artists name))))
+           (song (cl-first
+                  (seq-random-elt
+                   (lastfm-artist-get-top-tracks artist)))))
+      (iter-yield (format "%s %s" artist song)))))
 
+(defun play-user-loved-songs ()
+  (play-songs (user-top-songs)))
+
+(defun play-artist-similar-songs (name)
+  (play-songs (artist-similar-songs name)))
+
+(defun play-tag-similar-songs (name)
+  (play-songs (tag-similar-songs)))
