@@ -85,34 +85,26 @@
     (with-current-buffer b
       (org-mode)
       (let ((bio-summary (cl-first artist-info))
-            (listeners (cl-second artist-info))
-            (playcount (cl-third artist-info))
             (similar-artists (cl-subseq artist-info 3 7))
             (tags (cl-subseq artist-info 8 12)))
         ;; (put-text-property 0 (length artist) 'face 'info-title-1 artist)
-        (insert (format "* %s\n\n" artist))
-        (insert (s-word-wrap 75 bio-summary))
-        (newline) (newline)
-        (insert (format "*Listeners*: %s" listeners))
-        (insert (format "   *Playcount*: %s\n" playcount))
-        (insert "\n** Similar artists: \n")
-        (mapcar (lambda (a)
-             (insert (format "[[elisp:(display-artist \"%s\")][%s]] | " a a)))
-           similar-artists)
-        (newline)
-        (insert "\n** Popular tags: \n")
-        (mapcar (lambda (a)
-             (insert (format "[[elisp:(display-tag \"%s\")][%s]] | "
-                             a a)))
-           tags)
-        (newline)
-        (insert "\n** Top Songs: \n")
-        (mapcar (lambda (a)
-             (let ((song (cl-first a))
-                   (listeners (cl-third a)))
-               (insert (format "[[elisp:(listen-on-youtube \"%s %s\")][%s]] (%s)\n"
-                               artist song song listeners))))
-         top-songs))
+        (insert
+         (format "* %s\n\n %s \n\n** Similar artists: \n"
+                 artist (s-word-wrap 75 bio-summary)))
+        (dolist (artist similar-artists)
+          (insert (format "[[elisp:(display-artist \"%s\")][%s]] | "
+                          artist artist)))
+        
+        (insert "\n\n** Popular tags: \n")
+        (dolist (tag tags)
+          (insert (format "[[elisp:(display-tag \"%s\")][%s]] | "
+                          tag tag)))
+        
+        (insert "\n\n** Top Songs: \n")
+        (cl-loop for entry from 1
+                 for song in top-songs
+                 do (insert (format "%2s. [[elisp:(display-tag \"%s\")][%s]]\n"
+                                    entry (car song) (car song)))))
       (use-local-map (copy-keymap org-mode-map))
       (local-set-key (kbd "C-5") (lambda ()
                                    (interactive)
