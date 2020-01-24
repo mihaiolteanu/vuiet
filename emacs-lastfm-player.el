@@ -1,4 +1,5 @@
 ;;; emacs-lastfm-player.el --- The minimalistic and stupid emacs music player -*- lexical-binding: t -*-
+;; !!!!!!!!!!!!!!!! DON'T FORGET TO MODIFY THE LAST.FM API !!!!!!!!!!!
 
 ;; (lastfm--defmethod album.getInfo (artist album)
 ;;   "Get the metadata and tracklist for an album on Last.fm using the album name."
@@ -84,7 +85,9 @@
            ("C-m" . org-open-at-point)
            ("q"   . kill-current-buffer)
            ("j"   . next-line)
-           ("k"   . previous-line))
+           ("k"   . previous-line)
+           ("l"   . forward-char)
+           ("h"   . backward-char))
 
 (defmacro with-player-macro (name &rest body)
   (declare (indent defun))
@@ -99,7 +102,7 @@
 (defun display-artist (artist)
   (with-player-macro artist
     (let* ((artist-info (lastfm-artist-get-info artist))
-           (top-songs (lastfm-artist-get-top-tracks artist))
+           (top-songs (lastfm-artist-get-top-tracks artist :limit 25))
            (bio-summary (cl-first artist-info))
            (similar-artists (cl-subseq artist-info 3 7))
            (tags (cl-subseq artist-info 8 12)))
@@ -117,90 +120,87 @@
                         tag tag)))
       
       (insert "\n\n* Top Songs: \n")
-      (cl-loop for entry from 1
+      (cl-loop for i from 1
                for song in top-songs
                do (insert
                    (format "%2s. [[elisp:(browse-youtube \"%s %s\")][%s]]\n"
-                           entry artist (car song) (car song))))
+                           i artist (car song) (car song))))
       
       (local-set-key (kbd "C-5") (lambda () (interactive)
                                    (counsel-similar-artists artist))))))
 
 
 (defun display-tag (tag)
-  (let ((b (generate-new-buffer tag))
-        (tag-info (lastfm-tag-get-info tag))
-        (tag-top-artists (lastfm-tag-get-top-artists tag :limit 15))
-        (tag-top-songs (lastfm-tag-get-top-tracks tag :limit 15))
-        ;; (tag-similar (lastfm-tag-get-similar tag)) ;; Empty response
-        )
-    (with-current-buffer b
-      (org-mode)
-      (insert (format "* %s\n\n" tag))
-      (insert (s-word-wrap 75 (cl-first tag-info)))
-      (newline)
+  (with-player-macro tag   
+    (let ((info (lastfm-tag-get-info tag))
+          ;; (songs (lastfm-tag-get-top-tracks tag :limit 15)) ;; Ignore it
+          ;; (tag-similar (lastfm-tag-get-similar tag)) ;; Empty response
+          (artists (lastfm-tag-get-top-artists tag :limit 15)))
+      
+      (insert (format "* %s\n\n %s \n"
+                      tag (s-word-wrap 75 (car info))))
+     
       (insert "\n** Top Artists: \n")
-      (mapcar (lambda (a)
-           (insert (format "[[elisp:(display-artist \"%s\")][%s]]\n"
-                           (cl-first a) (cl-first a))))
-         tag-top-artists)
-      (insert "\n** Top Songs: \n")
-      (mapcar (lambda (a)
-           (let ((artist (cl-first a))
-                 (song (cl-second a)))
-             (insert (format "[[elisp:(listen-on-youtube \"%s %s\")][%s - %s]]\n"
-                             artist song artist song))))
-         tag-top-songs))
-    (switch-to-buffer b)))
+      (cl-loop for i from 1
+               for artist in artists
+               do (insert
+                   (format "%2s. [[elisp:(display-artist \"%s\")][%s]]\n"
+                           i (car artist) (car artist))))
+      ;; Top songs for tags are usually just songs for 2, maximum 3 artists and
+      ;; are usually bullshit and non-relevant for that tag. Skip it.
+      )))
 
 (defun choose-from-user-loved-songs ()
   (interactive)
-  (ivy-read "Select Artist: "
+  (choose-song (lastfm-user-get-loved-tracks :limit 500)))
+
+(defun choose-song (songs)
+  (ivy-read "Play song: "
             (mapcar (lambda (song)
-                      (format "%s - %s" (cl-first song) (cl-second song)))
-                    (lastfm-user-get-loved-tracks :limit 500))
+                      (format "%s - %s" (car song) (cadr song)))
+                    songs)
             :action #'browse-youtube))
 
 (defun display-user-loved-songs (page)
-  (let ((b (generate-new-buffer lastfm--username))
-        (songs (lastfm-user-get-loved-tracks :limit 50 :page page)))
-    (with-current-buffer b
-      (org-mode)
-      (insert (format "* %s \n\n" lastfm--username))
+  (with-player-macro "loved-songs"        
+    (let* ((per-page 50)
+           (songs (lastfm-user-get-loved-tracks :limit per-page :page page)))
       (insert (format "** Loved Songs (Page %s): \n" page))
-      (mapcar (lambda (a)
-           (let ((artist (cl-first a))
-                 (song (cl-second a)))
-             (insert (format "[[elisp:(browse-youtube \"%s %s\")][%s - %s]]\n"
-                             artist song artist song))))
-              songs)
-      (use-local-map (copy-keymap org-mode-map))
-      (local-set-key (kbd "=") (lambda ()
-                                 (interactive)
-                                 (kill-buffer)
-                                 (display-user-loved-songs (1+ page))))
-      (local-set-key (kbd "-") (lambda ()
-                                 (interactive)
-                                 (when (> page 1)
-                                   (kill-buffer)
-                                   (display-user-loved-songs (1- page)))))
-      (local-set-key (kbd "C-5") #'choose-from-user-loved-songs))
-    
-    (switch-to-buffer b)))
+      (cl-loop for i from (+ 1 (* (1- page) per-page))
+               for entry in songs
+               for artist = (car entry)
+               for song = (cadr entry)
+               do (insert
+                   (format "%3s. [[elisp:(browse-youtube \"%s %s\")][%s - %s]]\n"
+                           i artist song artist song)))     
+
+      (local-set-key
+       (kbd "u") (lambda () (interactive)
+                   (kill-buffer)
+                   (display-user-loved-songs (1+ page))))
+      
+      (local-set-key
+       (kbd "i") (lambda () (interactive)
+                   (when (> page 1)
+                     (kill-buffer)
+                     (display-user-loved-songs (1- page)))))
+      (local-set-key
+       (kbd "s") (lambda () (interactive) (choose-song songs))))))
 
 (defun display-album (artist album)
-  (let ((b (generate-new-buffer lastfm--username))
-        (songs (lastfm-album-get-info artist album)))
-    (with-current-buffer b
-      (org-mode)
+  (with-player-macro "album"    
+    (let ((songs (lastfm-album-get-info artist album)))      
       (insert (format "* %s - %s \n\n" artist album))
-      (mapcar (lambda (a)
-                (let ((song (cl-first a))
-                      (duration (cl-second a)))
-                  (insert (format "[[elisp:(browse-youtube (find-youtube-id \"%s %s\"))][%s]] (%s)\n"
-                                  artist song song (format-seconds "%m:%02s" (string-to-number duration))))))
-              songs))
-    (switch-to-buffer b)))
+      (cl-loop for i from 1
+               for entry in songs
+               for song = (cadr entry)
+               for duration = (format-seconds
+                               "%m:%02s" (string-to-number (caddr entry))) 
+               do (insert
+                   (format "%2s. [[elisp:(browse-youtube \"%s %s\")][%s]] (%s)\n"
+                           i artist song song duration)))
+      (local-set-key
+       (kbd "s") (lambda () (interactive) (choose-song songs))))))
 
 (let ((playing-song)      
       (keep-playing t))
