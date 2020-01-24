@@ -8,7 +8,6 @@
 ;;   "Get the metadata for an artist. Includes biography, max 300 characters."
 ;;   :no ("bio summary" "listeners" "playcount" "similar artist name" "tags tag name"))
 
-
 (require 'lastfm)
 (require 's)
 (require 'cl-lib)
@@ -28,9 +27,10 @@
   (let ((search-results (cdr (ivy-youtube-tree-assoc 'items *qqJson*))))
     (cdr (ivy-youtube-tree-assoc 'videoId (aref search-results 0)))))
 
-(defun browse-youtube (video-id)
-  (browse-url (concat "https://www.youtube.com/watch?v="
-                      video-id)))
+(defun browse-youtube (str)
+  (if-let (id (find-youtube-id str))
+      (browse-url
+       (format "https://www.youtube.com/watch?v=%s" id))))
 
 (defun play-youtube-video (video-id)
   (mpv-start "--no-video"
@@ -73,43 +73,59 @@
 (memoize #'find-youtube-id)
 
 (defun counsel-similar-artists (artist)
+  (interactive "sArtist: ")
   (ivy-read "Select Artist: "
           (lastfm-artist-get-similar artist :limit 30)
           :action (lambda (a)
                     (display-artist (cl-first a)))))
 
+(define-derived-mode player-mode org-mode "Music Player")
+(bind-keys :map player-mode-map
+           ("C-m" . org-open-at-point)
+           ("q"   . kill-current-buffer)
+           ("j"   . next-line)
+           ("k"   . previous-line))
+
+(defmacro with-player-macro (name &rest body)
+  (declare (indent defun))
+  (let ((b (make-symbol "buffer")))
+    `(let ((,b (generate-new-buffer ,name)))
+       (with-current-buffer ,b
+         (player-mode)
+         ,@body)
+       (switch-to-buffer ,b)
+       (org-previous-visible-heading 1))))
+
 (defun display-artist (artist)
-  (let ((b (generate-new-buffer artist))
-        (artist-info (lastfm-artist-get-info artist))
-        (top-songs (lastfm-artist-get-top-tracks artist)))
-    (with-current-buffer b
-      (org-mode)
-      (let ((bio-summary (cl-first artist-info))
-            (similar-artists (cl-subseq artist-info 3 7))
-            (tags (cl-subseq artist-info 8 12)))
-        ;; (put-text-property 0 (length artist) 'face 'info-title-1 artist)
-        (insert
-         (format "* %s\n\n %s \n\n** Similar artists: \n"
-                 artist (s-word-wrap 75 bio-summary)))
-        (dolist (artist similar-artists)
-          (insert (format "[[elisp:(display-artist \"%s\")][%s]] | "
-                          artist artist)))
-        
-        (insert "\n\n** Popular tags: \n")
-        (dolist (tag tags)
-          (insert (format "[[elisp:(display-tag \"%s\")][%s]] | "
-                          tag tag)))
-        
-        (insert "\n\n** Top Songs: \n")
-        (cl-loop for entry from 1
-                 for song in top-songs
-                 do (insert (format "%2s. [[elisp:(display-tag \"%s\")][%s]]\n"
-                                    entry (car song) (car song)))))
-      (use-local-map (copy-keymap org-mode-map))
-      (local-set-key (kbd "C-5") (lambda ()
-                                   (interactive)
-                                   (counsel-similar-artists artist))))
-    (switch-to-buffer b)))
+  (with-player-macro artist
+    (let* ((artist-info (lastfm-artist-get-info artist))
+           (top-songs (lastfm-artist-get-top-tracks artist))
+           (bio-summary (cl-first artist-info))
+           (similar-artists (cl-subseq artist-info 3 7))
+           (tags (cl-subseq artist-info 8 12)))
+      (insert (format "* %s\n\n %s"
+                      artist (s-word-wrap 75 bio-summary)))
+
+      (insert "\n\n* Similar artists: \n")
+      (dolist (artist similar-artists)
+        (insert (format "|[[elisp:(display-artist \"%s\")][%s]]| "
+                        artist artist)))
+      
+      (insert "\n\n* Popular tags: \n")
+      (dolist (tag tags)
+        (insert (format "|[[elisp:(display-tag \"%s\")][%s]]| "
+                        tag tag)))
+      
+      (insert "\n\n* Top Songs: \n")
+      (cl-loop for entry from 1
+               for song in top-songs
+               do (insert
+                   (format "%2s. [[elisp:(browse-youtube \"%s %s\")][%s]]\n"
+                           entry artist (car song) (car song))))
+      
+      (local-set-key (kbd "C-5") (lambda () (interactive)
+                                   (counsel-similar-artists artist))))))
+
 
 (defun display-tag (tag)
   (let ((b (generate-new-buffer tag))
@@ -143,8 +159,7 @@
             (mapcar (lambda (song)
                       (format "%s - %s" (cl-first song) (cl-second song)))
                     (lastfm-user-get-loved-tracks :limit 500))
-            :action (lambda (s)
-                      (find-song-on-youtube s #'browse-youtube))))
+            :action #'browse-youtube))
 
 (defun display-user-loved-songs (page)
   (let ((b (generate-new-buffer lastfm--username))
@@ -175,13 +190,7 @@
 
 (defun display-album (artist album)
   (let ((b (generate-new-buffer lastfm--username))
-        (songs'(("About Butterflies And Children" "182") ("Places Remained" "269")
-                ("The Misplay" "272") ("From Silence To Noise" "934")
-                ("Someone Starts to Fade Away" "535") ("Kites" "475") ("Lightdark" "525")
-                ("Cold Afterall" "379") ("Like the elephant ?" "343")
-                ("YOU SAID â€˜I AM..â€™" "280") ("Clouds" "634"))
-              ;; (lastfm-album-get-info artist album)
-              ))
+        (songs (lastfm-album-get-info artist album)))
     (with-current-buffer b
       (org-mode)
       (insert (format "* %s - %s \n\n" artist album))
