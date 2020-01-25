@@ -1,13 +1,20 @@
 ;;; emacs-lastfm-player.el --- The minimalistic and stupid emacs music player -*- lexical-binding: t -*-
 ;; !!!!!!!!!!!!!!!! DON'T FORGET TO MODIFY THE LAST.FM API !!!!!!!!!!!
 
+;; -------------------------------------------------------------------
+;; !!!!!!!!!!!!!!!! DON'T FORGET TO MODIFY THE LAST.FM API !!!!!!!!!!!
+;; -------------------------------------------------------------------
 ;; (lastfm--defmethod album.getInfo (artist album)
 ;;   "Get the metadata and tracklist for an album on Last.fm using the album name."
-;;   :no ("track > name" "duration"))
+;;   :no ("track artist name" "track > name" "duration"))
 
 ;; (lastfm--defmethod artist.getInfo (artist)
 ;;   "Get the metadata for an artist. Includes biography, max 300 characters."
 ;;   :no ("bio summary" "listeners" "playcount" "similar artist name" "tags tag name"))
+
+;; (lastfm--defmethod artist.getTopTracks (artist (limit 10) (page 1))
+;;   "Get the top tracks by an artist, ordered by popularity."
+;;   :no ("track artist name" "track > name" "playcount" "listeners"))
 
 (require 'lastfm)
 (require 's)
@@ -29,9 +36,10 @@
     (cdr (ivy-youtube-tree-assoc 'videoId (aref search-results 0)))))
 
 (defun browse-youtube (str)
-  (if-let (id (find-youtube-id str))
-      (browse-url
-       (format "https://www.youtube.com/watch?v=%s" id))))
+  (find-youtube-id
+   str (lambda (id)
+         (browse-url
+          (format "https://www.youtube.com/watch?v=%s" id)))))
 
 (defun play-youtube-video (video-id)
   (mpv-start "--no-video"
@@ -44,7 +52,7 @@
          (cl-reduce #'concat in))
         (t nil)))
 
-(defun find-youtube-id (artist+song)
+(defun find-youtube-id (artist+song callback)
   (let ((youtube-id)
         (query-str (cond ((stringp artist+song) artist+song)
                          ((and (consp artist+song)
@@ -59,11 +67,10 @@
                  ("type" . "video")
                  ("maxResults" . 1)
                  ("key" .  ,ivy-youtube-key))
-       :parser 'json-read
-       :sync t
+       :parser 'json-read       
        :success (cl-function
                  (lambda (&key data &allow-other-keys)
-                   (setf youtube-id (youtube-response-id data))))
+                   (funcall callback (youtube-response-id data))))
        :status-code '((400 . (lambda (&rest _) (message "Got 400.")))
                       ;; (200 . (lambda (&rest _) (message "Got 200.")))
                       (418 . (lambda (&rest _) (message "Got 418.")))
@@ -102,7 +109,7 @@
 (defun display-artist (artist)
   (with-player-macro artist
     (let* ((artist-info (lastfm-artist-get-info artist))
-           (top-songs (lastfm-artist-get-top-tracks artist :limit 25))
+           (songs (lastfm-artist-get-top-tracks artist :limit 25))
            (bio-summary (cl-first artist-info))
            (similar-artists (cl-subseq artist-info 3 7))
            (tags (cl-subseq artist-info 8 12)))
@@ -121,11 +128,15 @@
       
       (insert "\n\n* Top Songs: \n")
       (cl-loop for i from 1
-               for song in top-songs
+               for song in songs
                do (insert
                    (format "%2s. [[elisp:(browse-youtube \"%s %s\")][%s]]\n"
-                           i artist (car song) (car song))))
-      
+                           i artist (cadr song) (cadr song))))
+
+      (local-set-key
+       (kbd "p") (lambda () (interactive)
+                   (play-songs (make-generator songs nil))))
+
       (local-set-key (kbd "C-5") (lambda () (interactive)
                                    (counsel-similar-artists artist))))))
 
@@ -200,17 +211,22 @@
                    (format "%2s. [[elisp:(browse-youtube \"%s %s\")][%s]] (%s)\n"
                            i artist song song duration)))
       (local-set-key
-       (kbd "s") (lambda () (interactive) (choose-song songs))))))
+       (kbd "s") (lambda () (interactive) (choose-song songs)))
+
+      (local-set-key
+       (kbd "p") (lambda () (interactive)
+                   (play-songs (make-generator songs nil)))))))
 
 (let ((playing-song)      
       (keep-playing t))
 
-  (defun play (songs)
-    (when keep-playing
-      (setf playing-song (iter-next songs))
-      (play-youtube-video (find-youtube-id playing-song))))
+  (defun play (songs)    
+    (when (and keep-playing
+               (setf playing-song (next-song songs)))
+      (find-youtube-id playing-song #'play-youtube-video)))
 
   (defun open-youtube ()
+    "Change it!"
     (browse-url (concat "https://www.youtube.com/watch?v="
                         (find-youtube-id playing-song))))
 
@@ -230,12 +246,24 @@
               ;; A kill event took place.
               (play songs))))
     (play songs)))
-               
-(iter-defun user-top-songs ()
-  (let ((songs (lastfm-user-get-loved-tracks :limit 50)))
-    (while t
-      (let ((song (seq-random-elt songs)))
-        (iter-yield (format "%s %s" (cl-first song) (cl-second song)))))))
+
+(iter-defun make-generator (songs random)  
+  (while songs    
+    (let ((song (if random
+                    (seq-random-elt songs)
+                  (prog1 (car songs)
+                    (setf songs (cdr songs))))))
+      (iter-yield
+       (format "%s %s" (car song) (cadr song))))))
+
+(defun next-song (songs)
+  (condition-case nil
+      (iter-next songs)
+    (iter-end-of-sequence nil)))
+
+(defun user-top-songs (random)
+  (make-generator
+   (lastfm-user-get-loved-tracks :limit 3) random))
 
 (iter-defun artist-similar-songs (name)
   (while t
@@ -258,7 +286,7 @@
       (iter-yield (format "%s %s" artist song)))))
 
 (defun play-user-loved-songs ()
-  (play-songs (user-top-songs)))
+  (play-songs (user-top-songs nil)))
 
 (defun play-artist-similar-songs (name)
   (play-songs (artist-similar-songs name)))
