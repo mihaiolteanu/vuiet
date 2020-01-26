@@ -1,5 +1,4 @@
 ;;; emacs-lastfm-player.el --- The minimalistic and stupid emacs music player -*- lexical-binding: t -*-
-;; !!!!!!!!!!!!!!!! DON'T FORGET TO MODIFY THE LAST.FM API !!!!!!!!!!!
 
 ;; -------------------------------------------------------------------
 ;; !!!!!!!!!!!!!!!! DON'T FORGET TO MODIFY THE LAST.FM API !!!!!!!!!!!
@@ -20,65 +19,27 @@
 (require 's)
 (require 'cl-lib)
 (require 'mpv)
-(require 'ivy-youtube)
 (require 'memoize)
 
 ;; Modify to (set-buffer-multibyte t) in elquery-read-string for correct displaying of special chars
-
-(setq ivy-youtube-key "AIzaSyCQlbsX0-ftN3SXba2fhYZu-lWfMxSAgJ0")
 (setq browse-url-browser-function 'browse-url-generic
       browse-url-generic-program "chromium")
 (setq org-confirm-elisp-link-function nil)
 
-(defun youtube-response-id (*qqJson*)
-  "Copied from ivy-youtube-wrapper in mpv.el"
-  (let ((search-results (cdr (ivy-youtube-tree-assoc 'items *qqJson*))))
-    (cdr (ivy-youtube-tree-assoc 'videoId (aref search-results 0)))))
+(defun force-to-string (song)
+  (cl-case (type-of song)
+    (string song)
+    (cons (format "%s %s" (car song) (cadr song)))))
 
-(defun browse-youtube (str)
-  (find-youtube-id
-   str (lambda (id)
-         (browse-url
-          (format "https://www.youtube.com/watch?v=%s" id)))))
+(defun browse-youtube (song)
+  (browse-url
+   (format "https://www.youtube.com/results?search_query=%s"
+           (force-to-string song))))
 
-(defun play-youtube-video (video-id)
-  (mpv-start "--no-video"
-             (concat "https://www.youtube.com/watch?v="
-                     video-id)))
-
-(defun my-as-string (in)
-  (cond ((stringp in) in)
-        ((and (consp in) (cl-every #'stringp in))
-         (cl-reduce #'concat in))
-        (t nil)))
-
-(defun find-youtube-id (artist+song callback)
-  (let ((youtube-id)
-        (query-str (cond ((stringp artist+song) artist+song)
-                         ((and (consp artist+song)
-                               (cl-every #'stringp artist+song))
-                          (cl-reduce #'concat artist+song))
-                         (t nil))))
-    (when query-str
-      (request
-       "https://www.googleapis.com/youtube/v3/search"
-       :params `(("part" . "snippet")
-                 ("q" . ,query-str)
-                 ("type" . "video")
-                 ("maxResults" . 1)
-                 ("key" .  ,ivy-youtube-key))
-       :parser 'json-read       
-       :success (cl-function
-                 (lambda (&key data &allow-other-keys)
-                   (funcall callback (youtube-response-id data))))
-       :status-code '((400 . (lambda (&rest _) (message "Got 400.")))
-                      ;; (200 . (lambda (&rest _) (message "Got 200.")))
-                      (418 . (lambda (&rest _) (message "Got 418.")))
-                      (403 . (lambda (&rest _)
-                               (message "403: Unauthorized. Maybe you need to enable your youtube api key"))))))
-    youtube-id))
-
-(memoize #'find-youtube-id)
+(defun play-song (song)  
+  (mpv-start
+   "--no-video"
+   (format "ytdl://ytsearch:%s" (force-to-string song))))
 
 (defun counsel-similar-artists (artist)
   (interactive "sArtist: ")
@@ -140,13 +101,12 @@
       (cl-loop for i from 1
                for song in songs
                do (insert
-                   (format "%2s. [[elisp:(browse-youtube \"%s %s\")][%s]]\n"
+                   (format "%2s. [[elisp:(play-song \"%s %s\")][%s]]\n"
                            i artist (cadr song) (cadr song))))
 
       (local-set-keys
         ("p" . (play-songs (make-generator songs nil)))
         ("s" . (counsel-similar-artists artist))))))
-
 
 (defun display-tag (tag)
   (with-player-macro tag   
@@ -175,9 +135,9 @@
 (defun choose-song (songs)
   (ivy-read "Play song: "
             (mapcar (lambda (song)
-                      (format "%s - %s" (car song) (cadr song)))
-                    songs)
-            :action #'browse-youtube))
+                 (format "%s - %s" (car song) (cadr song)))
+               songs)
+            :action #'play-song))
 
 (defun display-user-loved-songs (page)
   (with-player-macro "loved-songs"        
@@ -224,20 +184,13 @@
         ("s" . (choose-song songs))
         ("p" . (play-songs (make-generator songs nil)))))))
 
-
 (defconst playing-song nil)
 (defconst keep-playing t)
 
 (defun play (songs)    
   (when (and keep-playing
              (setf playing-song (next-song songs)))
-    (find-youtube-id playing-song #'play-youtube-video)))
-
-(defun open-youtube ()
-  "Change it!"
-  (find-youtube-id
-   playing-song (lambda (id)
-                  (browse-url (concat "https://www.youtube.com/watch?v=" id)))))
+    (play-song playing-song)))
 
 (defun stop-playing ()
   (setf keep-playing nil
@@ -248,12 +201,12 @@
 (defun playing-song () playing-song)
 
 (defun play-songs (songs)    
-  ;; Play the next song after the player exits (song finished, song skipped, etc.)
-  (setf mpv-on-exit-hook
-        (lambda (&rest event)
-          (unless event
-            ;; A kill event took place.
-            (play songs))))
+  ;; Play the next song after the player exits (song finished, song skipped, etc.)  
+  (setf keep-playing t
+        mpv-on-exit-hook (lambda (&rest event)
+                           (unless event
+                             ;; A kill event is "registered" as nil.
+                             (play songs))))
   (play songs))
 
 (iter-defun make-generator (songs random)  
@@ -272,7 +225,7 @@
 
 (defun user-top-songs (random)
   (make-generator
-   (lastfm-user-get-loved-tracks :limit 3) random))
+   (lastfm-user-get-loved-tracks :limit 500) random))
 
 (iter-defun artist-similar-songs (name)
   (while t
