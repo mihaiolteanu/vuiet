@@ -105,7 +105,7 @@
                            i artist (cadr song) (cadr song))))
 
       (local-set-keys
-        ("p" . (play-songs (make-generator songs nil)))
+        ("p" . (play songs))
         ("s" . (counsel-similar-artists artist))))))
 
 (defun display-tag (tag)
@@ -182,32 +182,39 @@
 
       (local-set-keys
         ("s" . (choose-song songs))
-        ("p" . (play-songs (make-generator songs nil)))))))
+        ("p" . (play songs))))))
 
 (defconst playing-song nil)
-(defconst keep-playing t)
-
-(defun play (songs)    
-  (when (and keep-playing
-             (setf playing-song (next-song songs)))
-    (play-song playing-song)))
 
 (defun stop-playing ()
-  (setf keep-playing nil
-        playing-song nil)
+  (setf playing-song nil
+        mpv-on-exit-hook nil)
   (mpv-kill))
 
 (defun skip-song () (mpv-kill))
 (defun playing-song () playing-song)
 
-(defun play-songs (songs)    
-  ;; Play the next song after the player exits (song finished, song skipped, etc.)  
-  (setf keep-playing t
-        mpv-on-exit-hook (lambda (&rest event)
-                           (unless event
-                             ;; A kill event is "registered" as nil.
-                             (play songs))))
-  (play songs))
+(cl-defun play (songs &key (random nil))
+  "Play a song given as string, or a song given as a cons of artist plus song name,
+or a list of artist plus song names each one given as artist plus song name or as a generator."
+  (cl-case (type-of songs)
+    (string (progn
+              (setf playing-song songs)
+              (mpv-start "--no-video"
+                         (format "ytdl://ytsearch:%s" songs))))
+    (cons (cl-case (type-of (car songs))
+            ;; A single song as a list of artist + song.
+            (string (play (concat (car songs) " " (cadr songs))))
+            ;; A list of songs as lists of artist + song.
+            (cons   (play (make-generator songs random)))
+            ;; A Generator of songs.
+            (symbol (play (next-song songs))
+                    ;; Play the rest of the songs, after this one finishes.
+                    (setf mpv-on-exit-hook
+                          (lambda (&rest event)
+                            (unless event
+                              ;; A kill event (mpv closes) is "registered" as nil.
+                              (play songs)))))))))
 
 (iter-defun make-generator (songs random)  
   (while songs    
@@ -222,10 +229,6 @@
   (condition-case nil
       (iter-next songs)
     (iter-end-of-sequence nil)))
-
-(defun user-top-songs (random)
-  (make-generator
-   (lastfm-user-get-loved-tracks :limit 500) random))
 
 (iter-defun artist-similar-songs (name)
   (while t
@@ -248,7 +251,7 @@
       (iter-yield (format "%s %s" artist song)))))
 
 (defun play-user-loved-songs ()
-  (play-songs (user-top-songs nil)))
+  (play (lastfm-user-get-loved-tracks :limit 500)))
 
 (defun play-artist-similar-songs (name)
   (play-songs (artist-similar-songs name)))
