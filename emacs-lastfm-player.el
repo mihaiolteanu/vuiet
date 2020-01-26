@@ -225,35 +225,36 @@
         ("p" . (play-songs (make-generator songs nil)))))))
 
 
-(let ((playing-song)      
-      (keep-playing t))
+(defconst playing-song nil)
+(defconst keep-playing t)
 
-  (defun play (songs)    
-    (when (and keep-playing
-               (setf playing-song (next-song songs)))
-      (find-youtube-id playing-song #'play-youtube-video)))
+(defun play (songs)    
+  (when (and keep-playing
+             (setf playing-song (next-song songs)))
+    (find-youtube-id playing-song #'play-youtube-video)))
 
-  (defun open-youtube ()
-    "Change it!"
-    (browse-url (concat "https://www.youtube.com/watch?v="
-                        (find-youtube-id playing-song))))
+(defun open-youtube ()
+  "Change it!"
+  (find-youtube-id
+   playing-song (lambda (id)
+                  (browse-url (concat "https://www.youtube.com/watch?v=" id)))))
 
-  (defun stop-playing ()
-    (setf keep-playing nil
-          playing-song nil)
-    (mpv-kill))
+(defun stop-playing ()
+  (setf keep-playing nil
+        playing-song nil)
+  (mpv-kill))
 
-  (defun skip-song () (mpv-kill))
-  (defun playing-song () playing-song)
+(defun skip-song () (mpv-kill))
+(defun playing-song () playing-song)
 
-  (defun play-songs (songs)    
-    ;; Play the next song after the player exits (song finished, song skipped, etc.)
-    (setf mpv-on-exit-hook
-          (lambda (&rest event)
-            (unless event
-              ;; A kill event took place.
-              (play songs))))
-    (play songs)))
+(defun play-songs (songs)    
+  ;; Play the next song after the player exits (song finished, song skipped, etc.)
+  (setf mpv-on-exit-hook
+        (lambda (&rest event)
+          (unless event
+            ;; A kill event took place.
+            (play songs))))
+  (play songs))
 
 (iter-defun make-generator (songs random)  
   (while songs    
