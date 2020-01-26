@@ -106,6 +106,16 @@
        (switch-to-buffer ,b)
        (org-previous-visible-heading 1))))
 
+(defmacro local-set-keys (&rest bindings)
+  (declare (indent defun))
+  `(progn
+     ,@(mapcar (lambda (binding)
+                 `(local-set-key
+                   (kbd ,(car binding))
+                   (lambda () (interactive)
+                     ,(cdr binding))))
+               bindings)))
+
 (defun display-artist (artist)
   (with-player-macro artist
     (let* ((artist-info (lastfm-artist-get-info artist))
@@ -133,12 +143,9 @@
                    (format "%2s. [[elisp:(browse-youtube \"%s %s\")][%s]]\n"
                            i artist (cadr song) (cadr song))))
 
-      (local-set-key
-       (kbd "p") (lambda () (interactive)
-                   (play-songs (make-generator songs nil))))
-
-      (local-set-key (kbd "C-5") (lambda () (interactive)
-                                   (counsel-similar-artists artist))))))
+      (local-set-keys
+        ("p" . (play-songs (make-generator songs nil)))
+        ("s" . (counsel-similar-artists artist))))))
 
 
 (defun display-tag (tag)
@@ -185,22 +192,22 @@
                    (format "%3s. [[elisp:(browse-youtube \"%s %s\")][%s - %s]]\n"
                            i artist song artist song)))     
 
-      (local-set-key
-       (kbd "u") (lambda () (interactive)
-                   (kill-buffer)
-                   (display-user-loved-songs (1+ page))))
-      
-      (local-set-key
-       (kbd "i") (lambda () (interactive)
-                   (when (> page 1)
-                     (kill-buffer)
-                     (display-user-loved-songs (1- page)))))
-      (local-set-key
-       (kbd "s") (lambda () (interactive) (choose-song songs))))))
+      (local-set-keys
+        ("u" . (progn (kill-buffer)
+                      (display-user-loved-songs (1+ page))))
+        ("i" . (when (> page 1)
+                 (kill-buffer)
+                 (display-user-loved-songs (1- page))))
+        ("s" . (choose-song songs))))))
 
 (defun display-album (artist album)
   (with-player-macro "album"    
-    (let ((songs (lastfm-album-get-info artist album)))      
+    (let* ((songs (lastfm-album-get-info artist album))
+           ;; Align song durations in one nice column. For this, I need to know
+           ;; the longest song name from the album.
+           (max-len (cl-loop for entry in songs
+                             maximize (length (cadr entry)))))
+      
       (insert (format "* %s - %s \n\n" artist album))
       (cl-loop for i from 1
                for entry in songs
@@ -208,14 +215,15 @@
                for duration = (format-seconds
                                "%m:%02s" (string-to-number (caddr entry))) 
                do (insert
-                   (format "%2s. [[elisp:(browse-youtube \"%s %s\")][%s]] (%s)\n"
+                   (format (concat "%2s. [[elisp:(browse-youtube \"%s %s\")][%-"
+                                   (number-to-string (1+ max-len))
+                                   "s]] %s\n")
                            i artist song song duration)))
-      (local-set-key
-       (kbd "s") (lambda () (interactive) (choose-song songs)))
 
-      (local-set-key
-       (kbd "p") (lambda () (interactive)
-                   (play-songs (make-generator songs nil)))))))
+      (local-set-keys
+        ("s" . (choose-song songs))
+        ("p" . (play-songs (make-generator songs nil)))))))
+
 
 (let ((playing-song)      
       (keep-playing t))
