@@ -101,7 +101,7 @@
       (cl-loop for i from 1
                for song in songs
                do (insert
-                   (format "%2s. [[elisp:(play-song \"%s %s\")][%s]]\n"
+                   (format "%2s. [[elisp:(play \"%s|%s\")][%s]]\n"
                            i artist (cadr song) (cadr song))))
 
       (local-set-keys
@@ -189,22 +189,56 @@
 (defun stop-playing ()
   (setf playing-song nil
         mpv-on-exit-hook nil)
+  (setq-default mode-line-misc-info nil)
   (mpv-kill))
 
 (defun skip-song () (mpv-kill))
+
+(defun set-playing-song (song)
+  (let ((artist+song (s-split "|" song)))
+    (if (= (length artist+song) 2)
+        ;; Playing song can be splitted in artist + song name.
+        (setf playing-song `(,(s-trim (car artist+song))
+                             ,(s-trim (cadr artist+song))))
+      ;; No artist info available.
+      (setf playing-song song))))
+
 (defun playing-song () playing-song)
+
+(defun playing-song-str ()
+  "Force the playing song into a string."
+  (let ((song (playing-song)))
+    (if (stringp song)
+        song
+      (concat (car song) " - " (cadr song)))))
+
+(defun display-playing-artist ()
+  (interactive)
+  (if (consp (playing-song))
+      (display-artist (car (playing-song)))))
+
+(defun search-youtube-playing-song ()
+  (interactive)
+  (browse-url (format "https://www.youtube.com/results?search_query=%s"
+                      (playing-song-str))))
 
 (cl-defun play (songs &key (random nil))
   "Play a song given as string, or a song given as a cons of artist plus song name,
 or a list of artist plus song names each one given as artist plus song name or as a generator."
+  (stop-playing)                        ;Clear hooks, leave in a clean state for a new start.
   (cl-case (type-of songs)
     (string (progn
-              (setf playing-song songs)
+              (set-playing-song songs)
+              (setq-default mode-line-misc-info
+                            (concat (s-replace "|" " - " songs)
+                                    "      "))
               (mpv-start "--no-video"
-                         (format "ytdl://ytsearch:%s" songs))))
+                         (format "ytdl://ytsearch:%s"
+                                 ;; Make a clean search, with no extra bits.
+                                 (s-replace "|" " " songs)))))
     (cons (cl-case (type-of (car songs))
             ;; A single song as a list of artist + song.
-            (string (play (concat (car songs) " " (cadr songs))))
+            (string (play (concat (car songs) "|" (cadr songs))))
             ;; A list of songs as lists of artist + song.
             (cons   (play (make-generator songs random)))
             ;; A Generator of songs.
@@ -214,7 +248,13 @@ or a list of artist plus song names each one given as artist plus song name or a
                           (lambda (&rest event)
                             (unless event
                               ;; A kill event (mpv closes) is "registered" as nil.
-                              (play songs)))))))))
+                              (play songs))))))))
+  "playing...")
+
+(defun player-next-song ()
+  (interactive)
+  ;; The on-kill-event hook ensures the functions does what it says.
+  (mpv-kill))
 
 (iter-defun make-generator (songs random)  
   (while songs    
@@ -223,7 +263,7 @@ or a list of artist plus song names each one given as artist plus song name or a
                   (prog1 (car songs)
                     (setf songs (cdr songs))))))
       (iter-yield
-       (format "%s %s" (car song) (cadr song))))))
+       (format "%s|%s" (car song) (cadr song))))))
 
 (defun next-song (songs)
   (condition-case nil
