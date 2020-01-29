@@ -224,12 +224,28 @@
   (browse-url (format "https://www.youtube.com/results?search_query=%s"
                       (playing-song-str))))
 
+(defun love-song ()
+  (interactive)
+  (when-let (song (playing-song))
+    (lastfm-track-love (car song) (cadr song))))
+
+(defun unlove-song ()
+  (interactive)
+  (when-let (song (playing-song))
+    (lastfm-track-unlove (car song) (cadr song))))
+
 (cl-defun play (songs &key (random nil))
   (stop-playing)           ;Clear hooks, leave in a clean state for a new start.
   (cl-case (type-of (car songs))    
     (string (let ((artist (car songs))
                   (song   (cadr songs)))              
               (set-playing-song songs)
+              ;; If, after timeout, the same song is playing, scrobble it.
+              (run-at-time scrobble-timeout nil
+                           (lambda ()
+                             (when (equal songs (playing-song))
+                               (lastfm-track-scrobble artist song
+                                  (int-to-string (round (time-to-seconds (current-time))))))))
               (setq-default mode-line-misc-info
                             (format "%s - %s        "  artist song))
               (mpv-start "--no-video"
@@ -245,7 +261,7 @@
                       (play songs)))))
     ;; Reached the end of playlist. Leave in a clean state.
     (nil (stop-playing)))
-  "playing...") 
+  "playing...")
 
 
 (iter-defun make-generator (songs random)  
