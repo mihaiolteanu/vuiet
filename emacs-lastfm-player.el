@@ -42,11 +42,6 @@
 (defun track-as-string (track)
   (format "%s %s" (track-artist track) (track-name track)))
 
-(defun search-track-youtube (track)
-  (browse-url
-   (format "https://www.youtube.com/results?search_query=%s"
-           (track-as-string track))))
-
 (defun counsel-similar-artists (artist)
   (interactive "sArtist: ")
   (ivy-read "Select Artist: "
@@ -150,15 +145,19 @@
 (defun display-user-loved-songs (page)
   (with-player-macro "loved-songs"        
     (let* ((per-page 50)
-           (songs (lastfm-user-get-loved-tracks :limit per-page :page page)))
+           (songs (lastfm-user-get-loved-tracks :limit per-page :page page))
+           (max-len (cl-loop for entry in songs
+                             maximize (length (car entry)))))
       (insert (format "** Loved Songs (Page %s): \n" page))
       (cl-loop for i from (+ 1 (* (1- page) per-page))
                for entry in songs
                for artist = (car entry)
                for song = (cadr entry)
-               do (insert
-                   (format "%3s. [[elisp:(search-track-youtube \"%s %s\")][%s - %s]]\n"
-                           i artist song artist song)))     
+               do (insert                   
+                   (format (concat "%3s. [[elisp:(play '(\"%s\" \"%s\"))][%-"
+                                   (number-to-string max-len)
+                                   "s  %s]]\n")
+                           i artist song artist song))
 
       (local-set-keys
         ("u" . (progn (kill-buffer)
@@ -166,7 +165,7 @@
         ("i" . (when (> page 1)
                  (kill-buffer)
                  (display-user-loved-songs (1- page))))
-        ("s" . (choose-song songs))))))
+        ("s" . (choose-song songs)))))))
 
 (defun display-album (artist album)
   (with-player-macro "album"    
@@ -183,7 +182,7 @@
                for duration = (format-seconds
                                "%m:%02s" (string-to-number (caddr entry))) 
                do (insert
-                   (format (concat "%2s. [[elisp:(search-track-youtube \"%s %s\")][%-"
+                   (format (concat "%2s. [[elisp:(play '(\"%s\" \"%s\"))][%-"
                                    (number-to-string (1+ max-len))
                                    "s]] %s\n")
                            i artist song song duration)))
@@ -226,7 +225,7 @@
   (if (consp (playing-track))
       (display-artist (car (playing-track)))))
 
-(defun search-youtube-playing-track ()
+(defun playing-track-search-youtube ()
   (interactive)
   (browse-url (format "https://www.youtube.com/results?search_query=%s"
                       (playing-track-str))))
