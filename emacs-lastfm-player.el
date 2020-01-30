@@ -26,20 +26,26 @@
       browse-url-generic-program "chromium")
 (setq org-confirm-elisp-link-function nil)
 
-(defun force-to-string (song)
-  (cl-case (type-of song)
-    (string song)
-    (cons (format "%s %s" (car song) (cadr song)))))
+(defgroup emacs-music-player ()
+  "Emacs music player."
+  :group 'music
+  :prefix "sp-")
 
-(defun browse-youtube (song)
+(defcustom scrobble-timeout 20
+  "Time, in seconds, for the same song to play before scrobbling it."
+  :type '(number :tag "seconds")
+  :group 'emacs-music-player)
+
+(cl-defstruct track
+  artist name)
+
+(defun track-as-string (track)
+  (format "%s %s" (track-artist track) (track-name track)))
+
+(defun search-track-youtube (track)
   (browse-url
    (format "https://www.youtube.com/results?search_query=%s"
-           (force-to-string song))))
-
-(defun play-song (song)  
-  (mpv-start
-   "--no-video"
-   (format "ytdl://ytsearch:%s" (force-to-string song))))
+           (track-as-string track))))
 
 (defun counsel-similar-artists (artist)
   (interactive "sArtist: ")
@@ -116,8 +122,7 @@
     (let ((info (lastfm-tag-get-info tag))
           ;; (songs (lastfm-tag-get-top-tracks tag :limit 15)) ;; Ignore it
           ;; (tag-similar (lastfm-tag-get-similar tag)) ;; Empty response
-          (artists (lastfm-tag-get-top-artists tag :limit 15)))
-      
+          (artists (lastfm-tag-get-top-artists tag :limit 15)))      
       (insert (format "* %s\n\n %s \n"
                       tag (s-word-wrap 75 (car info))))
      
@@ -152,7 +157,7 @@
                for artist = (car entry)
                for song = (cadr entry)
                do (insert
-                   (format "%3s. [[elisp:(browse-youtube \"%s %s\")][%s - %s]]\n"
+                   (format "%3s. [[elisp:(search-track-youtube \"%s %s\")][%s - %s]]\n"
                            i artist song artist song)))     
 
       (local-set-keys
@@ -178,7 +183,7 @@
                for duration = (format-seconds
                                "%m:%02s" (string-to-number (caddr entry))) 
                do (insert
-                   (format (concat "%2s. [[elisp:(browse-youtube \"%s %s\")][%-"
+                   (format (concat "%2s. [[elisp:(search-track-youtube \"%s %s\")][%-"
                                    (number-to-string (1+ max-len))
                                    "s]] %s\n")
                            i artist song song duration)))
@@ -187,27 +192,29 @@
         ("s" . (choose-song songs))
         ("p" . (play songs))))))
 
-(defconst playing-song nil
-  "Currently playing song, (\"artist\" \"song-name\").")
+(defconst playing-track nil "Currently playing track")
 
-(defun set-playing-song (song)
-  (setf playing-song song))
+(defun set-playing-track (track)  
+  (setf playing-track track))
+
+(set-playing-track "dfadsf")
 
 (defun stop-playing ()
-  (setf playing-song nil
+  (setf playing-track nil
         mpv-on-exit-hook nil)
   (setq-default mode-line-misc-info nil)
   (mpv-kill))
 
-(defun playing-song ()
-  playing-song)
+(defun playing-track ()
+  playing-track)
 
-(defun playing-song-str ()
-  (concat (car (playing-song)) " - " (cadr (playing-song))))
+(defun playing-track-str ()
+  (concat (track-artist (playing-track)) " - "
+          (track-name   (playing-track))))
 
-(defun player-next-song ()
+(defun player-next-track ()
+  "The on-kill-event hook ensures the functions does what it says."
   (interactive)
-  ;; The on-kill-event hook ensures the functions does what it says.
   (mpv-kill))
 
 (defun player-pause ()
@@ -216,93 +223,106 @@
 
 (defun display-playing-artist ()
   (interactive)
-  (if (consp (playing-song))
-      (display-artist (car (playing-song)))))
+  (if (consp (playing-track))
+      (display-artist (car (playing-track)))))
 
-(defun search-youtube-playing-song ()
+(defun search-youtube-playing-track ()
   (interactive)
   (browse-url (format "https://www.youtube.com/results?search_query=%s"
-                      (playing-song-str))))
+                      (playing-track-str))))
 
-(defun love-song ()
+(defun love-track ()
   (interactive)
-  (when-let (song (playing-song))
-    (lastfm-track-love (car song) (cadr song))))
+  (when-let (track (playing-track))
+    (lastfm-track-love (track-artist track)
+                       (track-name   track))))
 
-(defun unlove-song ()
+(defun unlove-track ()
   (interactive)
-  (when-let (song (playing-song))
-    (lastfm-track-unlove (car song) (cadr song))))
+  (when-let (track (playing-track))
+    (lastfm-track-unlove (track-artist track)
+                         (track-name   track))))
 
-(cl-defun play (songs &key (random nil))
+(defun scrobble-track (track)
+  "Scrobble `track', if it's the same as the playing track."
+  (when (equal track (playing-track))
+    (let ((timestamp (round (time-to-seconds (current-time)))))
+      (lastfm-track-scrobble (track-artist track) (track-name track)
+                             (int-to-string timestamp)))))
+
+(defun play-track (track)
+  (mpv-start
+   "--no-video"
+   (format "ytdl://ytsearch:%s" (track-as-string track))))
+
+(cl-defun play (item &key (random nil))
   (stop-playing)           ;Clear hooks, leave in a clean state for a new start.
-  (cl-case (type-of (car songs))    
-    (string (let ((artist (car songs))
-                  (song   (cadr songs)))              
-              (set-playing-song songs)
-              ;; If, after timeout, the same song is playing, scrobble it.
-              (run-at-time scrobble-timeout nil
-                           (lambda ()
-                             (when (equal songs (playing-song))
-                               (lastfm-track-scrobble artist song
-                                  (int-to-string (round (time-to-seconds (current-time))))))))
-              (setq-default mode-line-misc-info
-                            (format "%s - %s        "  artist song))
-              (mpv-start "--no-video"
-                         (format "ytdl://ytsearch:%s %s" artist song))))
-    ;; A list of the above, (("artist1" "song1") ("artist2" "song2") ...)
-    (cons   (play (make-generator songs random)))    
-    (symbol (play (next-song songs))    ;a generator
-            ;; Play the rest of the songs, after this one finishes.
-            (setf mpv-on-exit-hook
-                  (lambda (&rest event)
-                    (unless event
-                      ;; A kill event (mpv closes) is "registered" as nil.
-                      (play songs)))))
-    ;; Reached the end of playlist. Leave in a clean state.
-    (nil (stop-playing)))
-  "playing...")
+  (cl-case (type-of item)
+    ;; A track can be played directly.
+    (track (let ((artist (track-artist item))
+                 (name (track-name item)))
+             (set-playing-track item)
+             ;; If, after timeout, the same song is playing, scrobble it.
+             (run-at-time scrobble-timeout nil
+                          #'scrobble-track item)
+             (setq-default mode-line-misc-info
+                           (format "%s - %s        "  artist name))
+             (play-track item)))
+    (cons (cl-case (type-of (car item))
+            ;; A list of '(("artist1" "song1") ("artist2" "song2") ...)
+            ;; Transform them into a generator of tracks and try again.
+            (cons (play (make-generator item random)))
+            ;; A single ("artist1" "song1").
+            (string (play (make-generator (list item) random)))
+            ;; A generator of track structs.
+            (symbol (play (next-track item)) 
+                    ;; Play the rest of the songs, after this one finishes.
+                    (setf mpv-on-exit-hook
+                          (lambda (&rest event)
+                            (unless event
+                              ;; A kill event (mpv closes) is "registered" as nil.
+                              (play item))))))))
+  nil)
 
-
-(iter-defun make-generator (songs random)  
+(iter-defun make-generator (songs random)
   (while songs    
     (let ((song (if random
                     (seq-random-elt songs)
                   (prog1 (car songs)
                     (setf songs (cdr songs))))))
       (iter-yield
-       (list (car song) (cadr song))))))
+       (make-track :artist (car song)
+                   :name   (cadr song))))))
 
-(defun next-song (songs)
+(defun next-track (tracks)
   (condition-case nil
-      (iter-next songs)
+      (iter-next tracks)
     (iter-end-of-sequence nil)))
 
-(iter-defun artist-similar-songs (name)
+(iter-defun artist-similar-tracks (name)
   (while t
-    (let* ((artist (cl-first
-                    (seq-random-elt
-                     (lastfm-artist-get-similar name))))
-           (song (cl-first
-                  (seq-random-elt
-                   (lastfm-artist-get-top-tracks artist)))))
-      (iter-yield (format "%s %s" artist song)))))
+    (let* ((artist (car (seq-random-elt
+                       (lastfm-artist-get-similar name))))
+           (track  (cadr (seq-random-elt
+                       (lastfm-artist-get-top-tracks artist)))))      
+      (iter-yield (make-track :artist artist
+                              :name   track)))))
 
-(iter-defun tag-similar-songs (name)
+(iter-defun tag-similar-tracks (name)
   (while t
-    (let* ((artist (cl-first
-                    (seq-random-elt
-                     (lastfm-tag-get-top-artists name))))
-           (song (cl-first
-                  (seq-random-elt
-                   (lastfm-artist-get-top-tracks artist)))))
-      (iter-yield (format "%s %s" artist song)))))
+    (let* ((artist (car (seq-random-elt
+                       (lastfm-tag-get-top-artists name))))
+           (track (cadr (seq-random-elt
+                      (lastfm-artist-get-top-tracks artist)))))
+      (iter-yield (make-track :artist artist
+                              :name   track)))))
 
-(defun play-user-loved-songs ()
-  (play (lastfm-user-get-loved-tracks :limit 500)))
+(defun play-user-loved-tracks (random)
+  (play (lastfm-user-get-loved-tracks :limit 500) random))
 
-(defun play-artist-similar-songs (name)
-  (play-songs (artist-similar-songs name)))
+(defun play-artist-similar-tracks (name)
+  (play (artist-similar-tracks name)))
 
-(defun play-tag-similar-songs (name)
-  (play-songs (tag-similar-songs)))
+(defun play-tag-similar-tracks (name)
+  (play (tag-similar-tracks)))
+
