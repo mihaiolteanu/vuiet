@@ -249,6 +249,12 @@
       (lastfm-track-scrobble (track-artist track) (track-name track)
                              (int-to-string timestamp)))))
 
+(defun track-lyrics ()
+  (interactive)
+  (let ((track (playing-track)))
+    (display-lyrics (track-artist track)
+                    (track-name   track))))
+
 (defun play-track (track)
   (mpv-start
    "--no-video"
@@ -298,30 +304,47 @@
       (iter-next tracks)
     (iter-end-of-sequence nil)))
 
-(iter-defun artist-similar-tracks (name)
+(iter-defun artists-similar-tracks (artists)
   (while t
-    (let* ((artist (car (seq-random-elt
-                       (lastfm-artist-get-similar name))))
+    (let* ((artists (lastfm-artist-get-similar
+                     (if (stringp artists)
+                         artists
+                       (seq-random-elt artists))))
+           (artist (car (seq-random-elt artists)))
            (track  (cadr (seq-random-elt
-                       (lastfm-artist-get-top-tracks artist)))))      
+                       (lastfm-artist-get-top-tracks artist)))))
       (iter-yield (make-track :artist artist
                               :name   track)))))
 
-(iter-defun tag-similar-tracks (name)
+(iter-defun tags-similar-tracks (tags)
   (while t
-    (let* ((artist (car (seq-random-elt
-                       (lastfm-tag-get-top-artists name))))
-           (track (cadr (seq-random-elt
-                      (lastfm-artist-get-top-tracks artist)))))
+    (let* ((artists (lastfm-tag-get-top-artists
+                     (if (stringp tags)
+                         tags
+                       (seq-random-elt tags))))
+           (artist (car (seq-random-elt artists)))
+           (track  (cadr (seq-random-elt
+                       (lastfm-artist-get-top-tracks artist)))))
       (iter-yield (make-track :artist artist
+                              :name   track)))))
+
+(iter-defun loved-tracks-similar ()
+  (while t
+    (let* ((artist  (car (seq-random-elt
+                        (lastfm-user-get-loved-tracks))))
+           (similar (car (seq-random-elt
+                        (lastfm-artist-get-similar artist))))
+           (track   (cadr (seq-random-elt
+                        (lastfm-artist-get-top-tracks similar)))))
+      (iter-yield (make-track :artist similar
                               :name   track)))))
 
 (defun play-user-loved-tracks (random)
   (play (lastfm-user-get-loved-tracks :limit 500) random))
 
 (defun play-artist-similar-tracks (name)
-  (play (artist-similar-tracks name)))
+  (play (artists-similar-tracks name)))
 
 (defun play-tag-similar-tracks (name)
-  (play (tag-similar-tracks)))
+  (play (tags-similar-tracks)))
 
