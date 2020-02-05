@@ -207,9 +207,15 @@
 (defun playing-track ()
   playing-track)
 
+(defun playing-artist ()
+  (track-artist (playing-track)))
+
+(defun playing-track-name ()
+  (track-name (playing-track)))
+
 (defun playing-track-str ()
-  (concat (track-artist (playing-track)) " - "
-          (track-name   (playing-track))))
+  (concat (playing-artist) " - "
+          (playing-track-name)))
 
 (defun player-next-track ()
   "The on-kill-event hook ensures the functions does what it says."
@@ -222,25 +228,31 @@
 
 (defun display-playing-artist ()
   (interactive)
-  (if (consp (playing-track))
-      (display-artist (car (playing-track)))))
+  (if (track-p (playing-track))
+      (display-artist (track-artist (playing-track)))))
 
 (defun playing-track-search-youtube ()
   (interactive)
   (browse-url (format "https://www.youtube.com/results?search_query=%s"
                       (playing-track-str))))
 
+(defun playing-artist-lastfm-page ()
+  (interactive)
+  (browse-url
+   (format "https://last.fm/music/%s"
+           (s-replace " " "+" (playing-artist)))))
+
 (defun love-track ()
   (interactive)
-  (when-let (track (playing-track))
-    (lastfm-track-love (track-artist track)
-                       (track-name   track))))
+  (when (playing-track)
+    (lastfm-track-love (playing-artist)
+                       (playing-track-name))))
 
 (defun unlove-track ()
   (interactive)
-  (when-let (track (playing-track))
-    (lastfm-track-unlove (track-artist track)
-                         (track-name   track))))
+  (when (playing-track)
+    (lastfm-track-unlove (playing-artist)
+                         (playing-track-name))))
 
 (defun scrobble-track (track)
   "Scrobble `track', if it's the same as the playing track."
@@ -251,9 +263,9 @@
 
 (defun track-lyrics ()
   (interactive)
-  (let ((track (playing-track)))
-    (display-lyrics (track-artist track)
-                    (track-name   track))))
+  (when (playing-track)
+    (versuri-display (playing-artist)
+                     (playing-track-name))))
 
 (defun play-track (track)
   (mpv-start
@@ -321,7 +333,7 @@
     (let* ((artists (lastfm-tag-get-top-artists
                      (if (stringp tags)
                          tags
-                       (seq-random-elt tags))))
+                       (car (seq-random-elt tags)))))
            (artist (car (seq-random-elt artists)))
            (track  (cadr (seq-random-elt
                        (lastfm-artist-get-top-tracks artist)))))
@@ -339,12 +351,24 @@
       (iter-yield (make-track :artist similar
                               :name   track)))))
 
+(cl-defun play-artist-top-tracks (artist &key (random nil) (limit 10))
+  (play (make-generator
+         (lastfm-artist-get-top-tracks artist :limit limit)
+         random)))
+
+(defun play-similar-playing-artist ()
+  (play-artist-top-tracks (playing-artist) :random t))
+
+(defun play-similar-playing-tags ()
+  (play (tags-similar-tracks
+         (lastfm-artist-get-top-tags (playing-artist)))))
+      
 (defun play-user-loved-tracks (random)
   (play (lastfm-user-get-loved-tracks :limit 500) random))
 
 (defun play-artist-similar-tracks (name)
   (play (artists-similar-tracks name)))
 
-(defun play-tag-similar-tracks (name)
-  (play (tags-similar-tracks)))
+(defun play-tag-similar-tracks (tag)
+  (play (tags-similar-tracks tag)))
 
