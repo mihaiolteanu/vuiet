@@ -605,7 +605,7 @@ username given in the setup of the lastfm.el package."
   (interactive (list (y-or-n-p "Play random? ")))
   (vuiet-play (lastfm-user-get-loved-tracks
                :limit vuiet-loved-tracks-limit)
-              random))
+              :random random))
 
 (iter-defun vuiet--loved-tracks-similar-tracks ()
   "Return a generator of tracks based on the user's loved tracks.
