@@ -147,8 +147,8 @@ a local binding such that KEY executes EXPR."
             (lastfm-artist-get-similar
              artist
              :limit vuiet-artist-similar-limit)
-          :action (lambda (a)
-                    (vuiet-artist-info (car a)))))
+            :action (lambda (a)
+                      (vuiet-artist-info (car a)))))
 
 (defun vuiet-artist-info (artist)
   "Display info about ARTIST in a new buffer.
@@ -176,12 +176,12 @@ l   visit the artist's lastfm page."
       (dolist (artist similar-artists)
         (insert (format "|[[elisp:(vuiet-artist-info \"%s\")][%s]]| "
                         artist artist)))
-      
+
       (insert "\n\n* Popular tags: \n")
       (dolist (tag tags)
         (insert (format "|[[elisp:(vuiet-tag-info \"%s\")][%s]]| "
                         tag tag)))
-      
+
       (insert "\n\n* Top Songs: \n")
       (cl-loop for i from 1
                for song in songs
@@ -208,7 +208,7 @@ l   visit the artist's lastfm page."
                       tag
                       (s-word-wrap 75 (replace-regexp-in-string
                                        "<a.*a>" "" (car info)))))
-     
+
       (insert "\n* Top Artists: \n")
       (cl-loop for i from 1
                for artist in artists
@@ -228,13 +228,13 @@ l   visit the artist's lastfm page."
                finally (return (cl-values artist song)))
     (ivy-read "Play song: "
               (mapcar (lambda (song)
-                   (list (format (s-format  "%-$0s %-$1s" 'elt
-                                            ;; Add the padding
-                                            `(,artist-max-len ,song-max-len))
-                                 ;; Add the actual artist and song.
-                                 (car song) (cadr song))
-                         (vuiet--new-track (car song) (cadr song))))
-                 songs)
+                        (list (format (s-format  "%-$0s %-$1s" 'elt
+                                                 ;; Add the padding
+                                                 `(,artist-max-len ,song-max-len))
+                                      ;; Add the actual artist and song.
+                                      (car song) (cadr song))
+                              (vuiet--new-track (car song) (cadr song))))
+                      songs)
               :action (lambda (selection)
                         (vuiet-play (cadr selection))))))
 
@@ -263,13 +263,13 @@ s        Choose a song to play, with ivy."
                                    "s  %s]]\n")
                            i artist song artist song))
 
-      (vuiet--local-set-keys
-        ("i" . (progn (kill-buffer)
-                      (vuiet-loved-tracks-info (1+ page))))
-        ("u" . (when (> page 1)
-                 (kill-buffer)
-                 (vuiet-loved-tracks-info (1- page))))
-        ("s" . (vuiet--ivy-play-song songs)))))))
+               (vuiet--local-set-keys
+                 ("i" . (progn (kill-buffer)
+                               (vuiet-loved-tracks-info (1+ page))))
+                 ("u" . (when (> page 1)
+                          (kill-buffer)
+                          (vuiet-loved-tracks-info (1- page))))
+                 ("s" . (vuiet--ivy-play-song songs)))))))
 
 (defun vuiet-album-info (artist album)
   "Display info about the ARTIST's ALBUM in a new buffer.
@@ -284,7 +284,7 @@ l   save lyrics for this album."
            ;; the longest song name from the album.
            (max-len (cl-loop for entry in songs
                              maximize (length (cadr entry)))))
-      
+
       (insert (format "* %s - %s \n\n" artist album))
       (cl-loop for i from 1
                for entry in songs
@@ -514,9 +514,9 @@ artist or the given list of artists."
                      :limit vuiet-artist-similar-limit))
            (artist (car (seq-random-elt artists)))
            (track  (cadr (seq-random-elt
-                       (lastfm-artist-get-top-tracks
-                        artist
-                        :limit vuiet-artist-tracks-limit)))))
+                          (lastfm-artist-get-top-tracks
+                           artist
+                           :limit vuiet-artist-tracks-limit)))))
       (iter-yield (vuiet--new-track artist track)))))
 
 (defun vuiet-play-artist-similar (artists)
@@ -551,9 +551,9 @@ the list of TAGS."
                      :limit vuiet-tag-artists-limit))
            (artist (car (seq-random-elt artists)))
            (track  (cadr (seq-random-elt
-                       (lastfm-artist-get-top-tracks
-                        artist
-                        :limit vuiet-artist-tracks-limit)))))
+                          (lastfm-artist-get-top-tracks
+                           artist
+                           :limit vuiet-artist-tracks-limit)))))
       (iter-yield (vuiet--new-track artist track)))))
 
 (defun vuiet-play-tag-similar (tags)
@@ -577,7 +577,7 @@ equal to VUIET-ARTIST-TRACKS-LIMIT."
   (interactive)
   (vuiet-play (vuiet--tags-similar-tracks
                (mapcar #'car (lastfm-artist-get-top-tags
-                       (vuiet-playing-artist))))))
+                              (vuiet-playing-artist))))))
 
 (defun vuiet-play-track (artist name)
   "Play track NAME from ARTIST."
@@ -598,7 +598,7 @@ username given in the setup of the lastfm.el package."
   (interactive)
   (vuiet--ivy-play-song (lastfm-user-get-loved-tracks
                          :limit vuiet-loved-tracks-limit)))
-      
+
 (defun vuiet-play-loved-tracks (random)
   "Play all the tracks from the user loved tracks.
 If RANDOM is t, play the tracks at random, indefinitely.
@@ -615,16 +615,16 @@ Return a random track from a random artist from the user's loved
 tracks list."
   (while t
     (let* ((artist  (car (seq-random-elt
-                        (lastfm-user-get-loved-tracks
-                         :limit vuiet-loved-tracks-limit))))
+                          (lastfm-user-get-loved-tracks
+                           :limit vuiet-loved-tracks-limit))))
            (similar (car (seq-random-elt
-                        (lastfm-artist-get-similar
-                         artist
-                         :limit vuiet-artist-similar-limit))))
+                          (lastfm-artist-get-similar
+                           artist
+                           :limit vuiet-artist-similar-limit))))
            (track   (cadr (seq-random-elt
-                        (lastfm-artist-get-top-tracks
-                         similar
-                         :limit vuiet-artist-tracks-limit)))))
+                           (lastfm-artist-get-top-tracks
+                            similar
+                            :limit vuiet-artist-tracks-limit)))))
       (iter-yield (vuiet--new-track similar track)))))
 
 (defun vuiet-play-loved-tracks-similar ()
