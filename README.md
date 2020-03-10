@@ -1,7 +1,7 @@
 # Vuiet, the music player and explorer for Emacs
 
-Vuiet is a music player based on similarities between artists. Vuiet takes
-advantage of lastfm's huge music dataset to figure out artists top tracks,
+Vuiet is a music player based on similarities between artists and genres. Vuiet
+takes advantage of lastfm's huge music dataset to figure out artists top tracks,
 genres and the relations between them.
 
 Vuiet searches all the tracks on youtube and plays them in the background with
@@ -138,9 +138,17 @@ option). You should have both of them installed.
     equal to VUIET-TAG-ARTISTS-LIMIT while the number of tracks is
     equal to VUIET-ARTIST-TRACKS-LIMIT.
 
-**vuiet-play-track** *artist name**
+**vuiet-play-track** *artist name*
 
     Play track NAME from ARTIST.
+
+**vuiet-play-track-search** *track*
+
+    Search TRACK and play the selected item.
+    Similar to `vuiet-play-track', but search for TRACK on last.fm
+    first and then let the user select one of the results.  The
+    selected item is what is played by vuiet.  Useful if you don't
+    know the exact name and/or artist of the song.
 
 **vuiet-play-track-by-lyrics** *lyrics*
 
@@ -195,6 +203,56 @@ option). You should have both of them installed.
     that generator and set an mpv hook on exit.  When the hook is
     called (mvp exists, track finished playing) call VUIET-PLAY again
     with the same generator.
+
+## Music Browser
+
+**vuiet-artist-info** *artist*
+
+    Display info about ARTIST in a new buffer.
+
+    p   play all the artist songs, sequentially.
+    s   select and display info for a similar artist with ivy.
+    l   visit the artist's lastfm page.
+
+**vuiet-artist-info-search** *artist*
+
+    Search ARTIST and display info about the selected item.
+    Similar to `vuiet-artist-info', but search for ARTIST on last.fm
+    first and then let the user select one artist from the resulting
+    list of artists.  Vuiet then displays the info about the user
+    selected artist.  Useful if you don't know the exact name of the
+    artist.
+
+**vuiet-tag-info** *tag*
+
+    Display info about TAG in a new buffer.
+
+**vuiet-loved-tracks-info** *(page 1) (n 50)*
+
+    Display N tracks from the user loved tracks in a new buffer.
+    If the user has more than N loved tracks, PAGE can be used to show
+    the next PAGE * N tracks.
+
+    <enter>  On a song entry, plays that song only.
+    i        Display the next PAGE * N songs.
+    u        Display the previous PAGE * N songs, if N > 1
+    s        Choose a song to play, with ivy.
+
+**vuiet-album-info** *artist album*
+
+    Display info about the ARTIST's ALBUM in a new buffer.
+
+    s   choose a song with ivy.
+    a   pick another album with ivy.
+    p   play all songs from the album.
+    l   save lyrics for this album.
+
+**vuiet-album-info-search** *artist*
+
+    Search all albums from ARTIST and display the selected one.
+    The album is displayed in a dedicated buffer.  See
+    `vuiet-album-info' for details regarding the active keybindings
+    inside this buffer.
 
 ## Player Interaction
 

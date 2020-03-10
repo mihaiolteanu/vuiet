@@ -192,6 +192,18 @@ l   visit the artist's lastfm page."
         ("s" . (vuiet-ivy-similar-artists artist))
         ("l" . (vuiet-artist-lastfm-page artist))))))
 
+(defun vuiet-artist-info-search (artist)
+  "Search ARTIST and display info about the selected item.
+Similar to `vuiet-artist-info', but search for ARTIST on last.fm
+first and then let the user select one artist from the resulting
+list of artists.  Vuiet then displays the info about the user
+selected artist.  Useful if you don't know the exact name of the
+artist."
+  (interactive "sArtist: ")
+  (ivy-read "Info for artist: "
+            (mapcar #'car (lastfm-artist-search artist))
+            :action #'vuiet-artist-info))
+
 (defun vuiet-tag-info (tag)
   "Display info about TAG in a new buffer."
   (interactive "sTag: ")
@@ -297,9 +309,20 @@ l   save lyrics for this album."
 
       (vuiet--local-set-keys
         ("s" . (vuiet--ivy-play-song songs))
-        ("a" . (vuiet-pick-album artist)) ;try another album.
+        ("a" . (vuiet-album-info-search artist)) ;try another album.
         ("p" . (vuiet-play songs))
         ("l" . (versuri-save-bulk songs 10))))))
+
+(defun vuiet-album-info-search (artist)
+  "Search all albums from ARTIST and display the selected one.
+The album is displayed in a dedicated buffer.  See
+`vuiet-album-info' for details regarding the active keybindings
+inside this buffer."
+  (interactive "sArtist: ")
+  (ivy-read "Select Album: "
+            (lastfm-artist-get-top-albums artist)
+            :action (lambda (album)
+                      (vuiet-album-info artist (car album)))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -583,6 +606,24 @@ equal to VUIET-ARTIST-TRACKS-LIMIT."
                      (read-string "Track Name: ")))
   (vuiet-play (vuiet--new-track artist name)))
 
+(defun vuiet-play-track-search (track)
+  "Search TRACK and play the selected item.
+Similar to `vuiet-play-track', but search for TRACK on last.fm
+first and then let the user select one of the results.  The
+selected item is what is played by vuiet.  Useful if you don't
+know the exact name and/or artist of the song."
+  (interactive "sTrack: ")
+  (ivy-read "Track to play: "
+            (mapcar (lambda (s)
+                 (let ((artist (car s))
+                       (name   (cadr s)))
+                   (list (format "%s - %s" artist name)
+                         (vuiet--new-track artist name))))
+               (lastfm-track-search track))
+            :action (lambda (s)
+                      (print s)
+                      (vuiet-play (cadr s)))))
+
 (defun vuiet-play-track-by-lyrics (lyrics)
   "Search a track by LYRICS and play it."
   (interactive "sLyrics: ")
@@ -636,17 +677,6 @@ VUIET-ARTIST-SIMILAR-LIMIT and the number of tracks is equal to
 VUIET-ARTIST-TRACKS-LIMIT."
   (interactive)
   (vuiet-play (vuiet--loved-tracks-similar-tracks)))
-
-(defun vuiet-pick-album (artist)
-  "Display an album from ARTIST and optionally play it.
-The album is displayed in a dedicated buffer.  See
-`vuiet-album-info' for details regarding the active keybindings
-inside this buffer."
-  (interactive "sArtist: ")
-  (ivy-read "Select Album: "
-            (lastfm-artist-get-top-albums artist :limit 10)
-            :action (lambda (album)
-                      (vuiet-album-info artist (car album)))))
 
 (provide 'vuiet)
 
