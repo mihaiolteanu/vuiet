@@ -613,16 +613,7 @@ first and then let the user select one of the results.  The
 selected item is what is played by vuiet.  Useful if you don't
 know the exact name and/or artist of the song."
   (interactive "sTrack: ")
-  (ivy-read "Track to play: "
-            (mapcar (lambda (s)
-                 (let ((artist (car s))
-                       (name   (cadr s)))
-                   (list (format "%s - %s" artist name)
-                         (vuiet--new-track artist name))))
-               (lastfm-track-search track))
-            :action (lambda (s)
-                      (print s)
-                      (vuiet-play (cadr s)))))
+  (vuiet--ivy-play-song (lastfm-track-search track)))
 
 (defun vuiet-play-track-by-lyrics (lyrics)
   "Search a track by LYRICS and play it."
@@ -647,6 +638,12 @@ username given in the setup of the lastfm.el package."
   (vuiet-play (lastfm-user-get-loved-tracks
                :limit vuiet-loved-tracks-limit)
               :random random))
+
+(defun vuiet-play-recent-track ()
+  "Play one of the recent listened tracks."
+  (interactive)
+  (vuiet--ivy-play-song (lastfm-user-get-recent-tracks
+                         :limit 25)))
 
 (iter-defun vuiet--loved-tracks-similar-tracks ()
   "Return a generator of tracks based on the user's loved tracks.
