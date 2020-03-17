@@ -1,18 +1,41 @@
 # Vuiet, the music player and explorer for Emacs
 
-Vuiet is a music player based on similarities between artists and genres. Vuiet
-takes advantage of lastfm's huge music dataset to figure out artists top tracks,
-genres and the relations between them.
+Playing and discovering new music from within Emacs has never been easier. With
+vuiet you can,
 
-Vuiet searches all the tracks on youtube and plays them in the background with
-mpv. Do some keybindings for play, pause and next-track, among others, and you have a
-hassle free music player.
+- Search and play any song, artist or create your own playlists which you can
+  listen.
 
-You could say this is something similar to lastfm or spotify but with more user
-control.
+- Playlists can be created on a multitude of criteria. Most of the playlists
+contain a fixed number of songs which are played one after another. But some
+playlists are able to pick songs at random, indefinitely.
 
-All in all, vuiet is a great way to discover new music without leaving the
-comfort of your keyboard.
+- Playlists can be created from:
+  - songs from a given artist
+  - all the songs from an artist's given album
+  - songs from artists similar to a given artist, taken at random
+  - songs from artists with the given genre
+  - all the user loved songs, sequentially or at random
+  - songs from artists similar the user loved songs artists
+  - songs similar to the currently playing song
+
+- Take advantage of lastfm's huge music dataset to figure out what are an artist
+top songs, the similarities between artists, each artist music genre, a user
+loved songs and listening history, etc.
+
+- Search all the tracks on youtube and play them in the background with
+mpv, so not music files are necessary on your machine.
+
+- Display an artist or music genre in an interactive buffer from which you can
+  direcly play songs or explore similar artists or genres.
+
+- Display the lyrics for the currently playing song and save it in a local
+  database.
+  
+- Search through all the lyrics in your local database and select a song to play.
+
+Vuiet has the music discoverability factor of lastfm or spotify but with the
+comfort and power of Emacs.
 
 ## Music player
 
