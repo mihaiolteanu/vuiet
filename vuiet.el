@@ -98,14 +98,18 @@ taking into consideration only the most recently loved tracks."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Browser
 
-(define-derived-mode vuiet-mode org-mode "Vuiet")
-(bind-keys :map vuiet-mode-map
+(defvar vuiet-mode-map
+  (let ((keymap (make-sparse-keymap)))
+    (bind-keys :map keymap
            ("C-m" . org-open-at-point)
            ("q"   . kill-current-buffer)
            ("j"   . next-line)
            ("k"   . previous-line)
            ("l"   . forward-char)
            ("h"   . backward-char))
+    keymap))
+
+(define-derived-mode vuiet-mode org-mode "Vuiet")
 
 (defmacro vuiet--with-vuiet-buffer (name &rest body)
   "Basic setup for a VUIET-MODE buffer.
