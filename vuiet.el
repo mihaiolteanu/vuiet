@@ -4,7 +4,7 @@
 
 ;; Author: Mihai Olteanu <mihai_olteanu@fastmail.fm>
 ;; Version: 1.0
-;; Package-Requires: ((emacs "26.1") (lastfm "1.1") (versuri "1.0") (s "1.12.0") (mpv "0.1.0"))
+;; Package-Requires: ((emacs "26.1") (lastfm "1.1") (versuri "1.0") (s "1.12.0") (bind-key "2.4") (mpv "0.1.0"))
 ;; Keywords: multimedia
 ;; URL: https://github.com/mihaiolteanu/vuiet
 
@@ -34,6 +34,7 @@
 (require 'versuri)
 (require 's)
 (require 'cl-lib)
+(require 'bind-key)
 (require 'mpv)
 
 (defgroup vuiet ()
