@@ -480,6 +480,17 @@ called (mvp exists, track finished playing) call VUIET-PLAY again
 with the same generator."
   (vuiet-stop)           ;Clear hooks, leave in a clean state for a new start.
   (cl-case (type-of item)
+    ;; The following case was added later after a bug report. It repeats
+    ;; functionality implemented already in this function. This is a quick way
+    ;; to introduce the possibility that the generation function is compiled, in
+    ;; which case, what is passed to vuiet-play is not a cons byt a
+    ;; compiled-function
+    (compiled-function (vuiet-play (vuiet--next-track item))
+                       (setf mpv-on-exit-hook
+                             (lambda (&rest event)
+                               (unless event
+                                 ;; A kill event (mpv closes) is "registered" as nil.
+                                 (vuiet-play item)))))
     ;; A track can be played directly.
     (vuiet-track (let ((artist (vuiet-track-artist item))
                        (name (vuiet-track-name item)))
