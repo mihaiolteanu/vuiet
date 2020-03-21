@@ -43,7 +43,7 @@ You can ask vuiet to play random tracks from random artists similar to an artist
 you already know and like. For example,
 
 ```emacs-lisp
-(vuiet-play-artist-similar '("steven wilson"))
+(vuiet-play-artist-similar "steven wilson")
 ```
 
 There is no limit to the number of artists specified in this call. New tracks
@@ -55,7 +55,7 @@ Or you can play random tracks from random artists that are tagged with any of
 the genres you specify,
 
 ```emacs-lisp
-(vuiet-play-tag-similar '("classic rock" "80s"))
+(vuiet-play-tag-similar "classic rock, 80s")
 ```
 
 There are multiple variations on these two type of playlists, some of them
