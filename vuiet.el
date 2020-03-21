@@ -36,6 +36,7 @@
 (require 'cl-lib)
 (require 'bind-key)
 (require 'mpv)
+(require 'generator)
 
 (defgroup vuiet ()
   "Emacs music player."
