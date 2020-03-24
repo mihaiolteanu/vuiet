@@ -43,7 +43,7 @@ You can ask vuiet to play random tracks from random artists similar to an artist
 you already know and like. For example,
 
 ```emacs-lisp
-(vuiet-play-artist-similar "steven wilson")
+(vuiet-play-artist-similar '("steven wilson"))
 ```
 
 There is no limit to the number of artists specified in this call. New tracks
@@ -55,7 +55,7 @@ Or you can play random tracks from random artists that are tagged with any of
 the genres you specify,
 
 ```emacs-lisp
-(vuiet-play-tag-similar "classic rock, 80s")
+(vuiet-play-tag-similar '("classic rock" "80s"))
 ```
 
 There are multiple variations on these two type of playlists, some of them
@@ -128,12 +128,18 @@ option). You should have both of them installed.
 **vuiet-play-artist-similar** *artists*
 
     Play tracks from artists similar to ARTISTS.
+
+    If called directly, ARTISTS is a list of strings of the form
+    '(artist1 artist2 etc.)
+
+    If called interactively, multiple artists can be provided in the
+    minibuffer if they are sepparated by commas.
+
     Random tracks from random artists similar to one of the ARTISTS
-    are played.
-    The number of similar artists taken into account is equal to
-    VUIET-ARTIST-SIMILAR-LIMIT and the number of tracks is equal to
-    VUIET-ARTIST-TRACKS-LIMIT.
-    
+    are played.  The number of similar artists taken into account is
+    equal to VUIET-ARTIST-SIMILAR-LIMIT and the number of tracks is
+    equal to VUIET-ARTIST-TRACKS-LIMIT.
+  
 **vuiet-play-playing-artist-similar**
 
     Play tracks from artists similar to the playing artist.
@@ -146,11 +152,17 @@ option). You should have both of them installed.
 **vuiet-play-tag-similar** *tags*
 
     Play tracks from artists similar to TAGS.
+
+    If called directly, TAGS is a list of strings of the form '(tag1
+    tag2 etc.)
+
+    If called interactively, multiple tags can be provided in the
+    minibuffer if they are sepparated by commas.
+
     Random tracks from random artists that have tags equal to one of
-    the TAGS are played.
-    The number of artists with the given tag taken into account is
-    equal to VUIET-TAG-ARTISTS-LIMIT while the number of tracks is
-    equal to VUIET-ARTIST-TRACKS-LIMIT.
+    the TAGS are played.  The number of artists with the given tag
+    taken into account is equal to VUIET-TAG-ARTISTS-LIMIT while the
+    number of tracks is equal to VUIET-ARTIST-TRACKS-LIMIT.
     
 **vuiet-play-playing-tags-similar**
 
