@@ -500,7 +500,7 @@ with the same generator."
                    (run-at-time vuiet-scrobble-timeout nil
                                 #'vuiet--scrobble-track item)
                    (setq-default mode-line-misc-info
-                                 (format "%s - %s        "  artist name))
+                    (list (format "%s - %s        "  artist name)))
                    (vuiet--play-track item)))
     (cons (cl-case (type-of (car item))
             ;; A list of '(("artist1" "song1") ("artist2" "song2") ...)
