@@ -227,21 +227,15 @@ option). You should have both of them installed.
 **vuiet-play** *item (random nil)*
 
     Play the ITEM with mpv and scrobble to lastfm.
-    RANDOM is used only if the ITEM list is not already a generator.
+    If RANDOM is t, take a random track from ITEM.
 
-    If ITEM is a VUIET-TRACK object, play it.
-
-    If ITEM is a (ARTIST SONG) form, where ARTIST and SONG are
-    strings, create a VUIET-TRACK object and call this function again
-    with this object.
-
-    If ITEM is a list of (ARTIST SONG) forms, create a generator of
-    VUIET-TRACK objects and call VUIET-PLAY again with the generator.
-
-    If ITEM is a generator, play the next VUIET-TRACK object from
-    that generator and set an mpv hook on exit.  When the hook is
-    called (mvp exists, track finished playing) call VUIET-PLAY again
-    with the same generator.
+    ITEM can be a `vuiet-track', a list of artist and song name
+    strings, in which case they're played directly, or a list of
+    artist and songs names in which case they're transformed into a
+    generator, or a generator of tracks, either compiled or not, in
+    which case a new `vuiet-track' is extracted and played, setting
+    mpv up as such, that when the track finishes a new track will be
+    extracted and played from the generator.
 
 ## Music Browser
 

@@ -438,6 +438,23 @@ See `versuri-display' for the active keybindings inside this buffer."
 
 (defun vuiet--play-track (track)
   "Play the TRACK in the background with mpv and ytdl."
+  ;; Update the mode-line after the track has been found on youtube and playback
+  ;; has started. This gives us a chance to display the artist, song name and
+  ;; the total duration of the song.
+  (setf mpv-on-event-hook
+        (lambda (ev)
+          (let ((event (cdr (car ev))))
+            (when (string-equal event "playback-restart")
+              (setq-default mode-line-misc-info
+               (list (format "%s - %s [%s] "
+                             (vuiet-track-artist track)
+                             (vuiet-track-name track)
+                             (format-time-string
+                              "%M:%S" (mpv-get-duration)))))))))
+  (vuiet--set-playing-track track)
+  ;; If, after timeout, the same song is playing, scrobble it.
+  (run-at-time vuiet-scrobble-timeout nil
+               #'vuiet--scrobble-track track)  
   (mpv-start
    "--no-video"
    (format "ytdl://ytsearch:%s" (vuiet--track-as-string track))))
@@ -462,60 +479,42 @@ will yield each (length songs) elements, sequentially."
       (iter-yield
        (vuiet--new-track (car song) (cadr song))))))
 
+(defun vuiet--play-generator (generator)
+  "Play one track from the GENERATOR.
+Set mvp up so that after quiting (track finishes), the next item
+from the generator is played."
+  (vuiet-play (vuiet--next-track generator))
+  (setf mpv-on-exit-hook
+        (lambda (&rest event)
+          (unless event
+            ;; A kill event (mpv closes) is "registered" as nil.
+            (vuiet-play generator)))))
+
 (cl-defun vuiet-play (item &key (random nil))
   "Play the ITEM with mpv and scrobble to lastfm.
-RANDOM is used only if the ITEM list is not already a generator.
+If RANDOM is t, take a random track from ITEM.
 
-If ITEM is a VUIET-TRACK object, play it.
-
-If ITEM is a (ARTIST SONG) form, where ARTIST and SONG are
-strings, create a VUIET-TRACK object and call this function again
-with this object.
-
-If ITEM is a list of (ARTIST SONG) forms, create a generator of
-VUIET-TRACK objects and call VUIET-PLAY again with the generator.
-
-If ITEM is a generator, play the next VUIET-TRACK object from
-that generator and set an mpv hook on exit.  When the hook is
-called (mvp exists, track finished playing) call VUIET-PLAY again
-with the same generator."
+ITEM can be a `vuiet-track', a list of artist and song name
+strings, in which case they're played directly, or a list of
+artist and songs names in which case they're transformed into a
+generator, or a generator of tracks, either compiled or not, in
+which case a new `vuiet-track' is extracted and played, setting
+mpv up as such, that when the track finishes a new track will be
+extracted and played from the generator."
   (vuiet-stop)           ;Clear hooks, leave in a clean state for a new start.
   (cl-case (type-of item)
-    ;; The following case was added later after a bug report. It repeats
-    ;; functionality implemented already in this function. This is a quick way
-    ;; to introduce the possibility that the generation function is compiled, in
-    ;; which case, what is passed to vuiet-play is not a cons byt a
-    ;; compiled-function
-    (compiled-function (vuiet-play (vuiet--next-track item))
-                       (setf mpv-on-exit-hook
-                             (lambda (&rest event)
-                               (unless event
-                                 ;; A kill event (mpv closes) is "registered" as nil.
-                                 (vuiet-play item)))))
-    ;; A track can be played directly.
-    (vuiet-track (let ((artist (vuiet-track-artist item))
-                       (name (vuiet-track-name item)))
-                   (vuiet--set-playing-track item)
-                   ;; If, after timeout, the same song is playing, scrobble it.
-                   (run-at-time vuiet-scrobble-timeout nil
-                                #'vuiet--scrobble-track item)
-                   (setq-default mode-line-misc-info
-                    (list (format "%s - %s        "  artist name)))
-                   (vuiet--play-track item)))
+    ;; A compiled generator
+    (compiled-function (vuiet--play-generator item))
+    (vuiet-track (vuiet--play-track item)) ; A track can be played directly.
     (cons (cl-case (type-of (car item))
             ;; A list of '(("artist1" "song1") ("artist2" "song2") ...)
             ;; Transform them into a generator of tracks and try again.
             (cons (vuiet-play (vuiet--make-generator item random)))
-            ;; A single ("artist1" "song1").
+            ;; A single ("artist1" "song1"), transform it into a vuiet-track and
+            ;; try again
             (string (vuiet-play (vuiet--new-track (car item) (cadr item))))
-            ;; A generator of track structs.
-            (symbol (vuiet-play (vuiet--next-track item))
-                    ;; Play the rest of the songs, after this one finishes.
-                    (setf mpv-on-exit-hook
-                          (lambda (&rest event)
-                            (unless event
-                              ;; A kill event (mpv closes) is "registered" as nil.
-                              (vuiet-play item))))))))
+            ;; A non-compiled generator.
+            (symbol (vuiet--play-generator item)))))
   nil)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
