@@ -533,6 +533,17 @@ will yield each (length songs) elements, sequentially."
       (iter-yield
        (vuiet--new-track (car song) (cadr song))))))
 
+(defun vuiet--play-generator (generator)
+  "Play one track from the GENERATOR.
+Set mvp up so that after quiting (track finishes), the next item
+from the generator is played."
+  (vuiet-play (vuiet--next-track generator))
+  (setf mpv-on-exit-hook
+        (lambda (&rest event)
+          (unless event
+            ;; A kill event (mpv closes) is "registered" as nil.
+            (vuiet-play generator)))))
+
 (cl-defun vuiet-play (item &key (random nil))
   "Play the ITEM with mpv and scrobble to lastfm.
 If RANDOM is t, take a random track from ITEM.
