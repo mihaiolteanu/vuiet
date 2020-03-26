@@ -154,6 +154,7 @@ a local binding such that KEY executes EXPR."
           :action (lambda (a)
                     (vuiet-artist-info (car a)))))
 
+;;;###autoload
 (defun vuiet-artist-info (artist)
   "Display info about ARTIST in a new buffer.
 
@@ -198,6 +199,7 @@ l   visit the artist's lastfm page."
         ("s" . (vuiet-ivy-similar-artists artist))
         ("l" . (vuiet-artist-lastfm-page artist))))))
 
+;;;###autoload
 (defun vuiet-artist-info-search (artist)
   "Search ARTIST and display info about the selected item.
 Similar to `vuiet-artist-info', but search for ARTIST on last.fm
@@ -210,6 +212,7 @@ artist."
             (mapcar #'car (lastfm-artist-search artist))
             :action #'vuiet-artist-info))
 
+;;;###autoload
 (defun vuiet-tag-info (tag)
   "Display info about TAG in a new buffer."
   (interactive "sTag: ")
@@ -548,6 +551,7 @@ extracted and played from the generator."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Playlists
 
+;;;###autoload
 (defun vuiet-play-artist (artist random)
   "Play the ARTIST top tracks.
 If RANDOM is t, play the tracks at random, indefinitely.
@@ -584,6 +588,7 @@ artist or the given list of artists."
                         :limit vuiet-artist-tracks-limit)))))
       (iter-yield (vuiet--new-track artist track)))))
 
+;;;###autoload
 (defun vuiet-play-artist-similar (artists)
   "Play tracks from artists similar to ARTISTS.
 
@@ -630,6 +635,7 @@ the list of TAGS."
                         :limit vuiet-artist-tracks-limit)))))
       (iter-yield (vuiet--new-track artist track)))))
 
+;;;###autoload
 (defun vuiet-play-tag-similar (tags)
   "Play tracks from artists similar to TAGS.
 
@@ -662,12 +668,14 @@ equal to VUIET-ARTIST-TRACKS-LIMIT."
                (mapcar #'car (lastfm-artist-get-top-tags
                        (vuiet-playing-artist))))))
 
+;;;###autoload
 (defun vuiet-play-track (artist name)
   "Play track NAME from ARTIST."
   (interactive (list (read-string "Artist: ")
                      (read-string "Track Name: ")))
   (vuiet-play (vuiet--new-track artist name)))
 
+;;;###autoload
 (defun vuiet-play-track-search (track)
   "Search TRACK and play the selected item.
 Similar to `vuiet-play-track', but search for TRACK on last.fm
@@ -677,12 +685,14 @@ know the exact name and/or artist of the song."
   (interactive "sTrack: ")
   (vuiet--ivy-play-song (lastfm-track-search track)))
 
+;;;###autoload
 (defun vuiet-play-track-by-lyrics (lyrics)
   "Search a track by LYRICS and play it."
   (interactive "sLyrics: ")
   (let ((track (versuri-ivy-search lyrics)))
     (vuiet-play track)))
 
+;;;###autoload
 (defun vuiet-play-loved-track ()
   "Select a track from the user loved tracks and play it.
 The user loved tracks list is the one associated with the
@@ -690,7 +700,8 @@ username given in the setup of the lastfm.el package."
   (interactive)
   (vuiet--ivy-play-song (lastfm-user-get-loved-tracks
                          :limit vuiet-loved-tracks-limit)))
-      
+
+;;;###autoload
 (defun vuiet-play-loved-tracks (random)
   "Play all the tracks from the user loved tracks.
 If RANDOM is t, play the tracks at random, indefinitely.
