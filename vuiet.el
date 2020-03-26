@@ -334,15 +334,36 @@ inside this buffer."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Player
 
-(defconst vuiet--playing-track nil "Currently playing track.")
+(defconst vuiet--playing-track nil
+  "Currently playing track.")
+(defconst vuiet--playing-track-duration nil
+  "Duration, in seconds, of the currently playing track.")
 
-(defun vuiet--set-playing-track (track)
-  "Update the currently playing track to TRACK."
-  (setf vuiet--playing-track track))
+(defun vuiet--set-playing-track (track duration)
+  "Update the currently playing track and duration."
+  (setf vuiet--playing-track track)
+  (setf vuiet--playing-track-duration duration))
 
 (defun vuiet--playing-track ()
   "Return the currently playing track."
   vuiet--playing-track)
+
+(defun vuiet--playing-track-duration ()
+  "Return the currently playing track duration."
+  vuiet--playing-track-duration)
+
+(defun vuiet-update-mode-line ()
+  "Update the mode-line."
+  (interactive)
+  (if (not (mpv-live-p))
+      (setq-default mode-line-misc-info nil)
+    (setq-default mode-line-misc-info
+     (list (format "%s - %s [%s/%s] "
+                   (vuiet-track-artist (vuiet--playing-track))
+                   (vuiet-track-name   (vuiet--playing-track))
+                   (format-time-string "%M:%S" (mpv-get-playback-position))
+                   (format-time-string "%M:%S" (vuiet--playing-track-duration))))))
+  (force-mode-line-update t))
 
 (defun vuiet-stop ()
   "Stop playing and clear the mode line."
@@ -372,9 +393,21 @@ inside this buffer."
 
 (defun vuiet-replay ()
   "Play the currently playing track from the beginning."
+  (interactive)  
+  (mpv-seek 0)
+  (vuiet-update-mode-line))
+
+(defun vuiet-seek-backward ()
+  "Seek backward 5 seconds."
   (interactive)
-  ;; No such feature in mpv.el available. Simulate one.
-  (mpv-seek-backward 9999))
+  (mpv-seek-backward 5)
+  (vuiet-update-mode-line))
+
+(defun vuiet-seek-forward ()
+  "Seek forward 5 seconds."
+  (interactive)
+  (mpv-seek-forward 5)
+  (vuiet-update-mode-line))
 
 (defun vuiet-play-pause ()
   "Toggle the play/pause status."
@@ -439,19 +472,14 @@ See `versuri-display' for the active keybindings inside this buffer."
 (defun vuiet--play-track (track)
   "Play the TRACK in the background with mpv and ytdl."
   ;; Update the mode-line after the track has been found on youtube and playback
-  ;; has started. This gives us a chance to display the artist, song name and
-  ;; the total duration of the song.
+  ;; has started. This gives us a chance to display to also display the total
+  ;; duration of the song besides the artist and song name.
   (setf mpv-on-event-hook
         (lambda (ev)
           (let ((event (cdr (car ev))))
             (when (string-equal event "playback-restart")
-              (setq-default mode-line-misc-info
-               (list (format "%s - %s [%s] "
-                             (vuiet-track-artist track)
-                             (vuiet-track-name track)
-                             (format-time-string
-                              "%M:%S" (mpv-get-duration)))))))))
-  (vuiet--set-playing-track track)
+              (vuiet--set-playing-track track (mpv-get-duration))
+              (vuiet-update-mode-line)))))  
   ;; If, after timeout, the same song is playing, scrobble it.
   (run-at-time vuiet-scrobble-timeout nil
                #'vuiet--scrobble-track track)  
