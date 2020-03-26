@@ -44,14 +44,12 @@
   :group 'music
   :prefix "vuiet-")
 
-;;;###autoload
 (defcustom vuiet-scrobble-timeout 30
   "Time, in seconds, for the same song to play before scrobbling it.
 A gigantic value basically disables scrobbling altogether."
   :type '(number :tag "seconds")
   :group 'vuiet)
 
-;;;###autoload
 (defcustom vuiet-artist-similar-limit 15
   "Number of artists similar to the given artist.
 When considering artists similar to a given artist, take as many
@@ -61,7 +59,6 @@ increases the chances you'll discover something totally new."
   :type '(number :tag "count")
   :group 'vuiet)
 
-;;;###autoload
 (defcustom vuiet-artist-tracks-limit 15
   "Number of tracks for the given artist.
 When considering the top tracks for a given artist, take as many
@@ -74,7 +71,6 @@ as a result."
   :type '(number :tag "count")
   :group 'vuiet)
 
-;;;###autoload
 (defcustom vuiet-tag-artists-limit 15
   "Number of artists for the given tag.
 When considering the top artists for a given tag, take as many
@@ -82,7 +78,6 @@ into consideration as this limit."
   :type '(number :tag "count")
   :group 'vuiet)
 
-;;;###autoload
 (defcustom vuiet-loved-tracks-limit 500
   "Number of tracks to take into consideration when playing user loved tracks.
 A number higher than your actual lastfm loved tracks, will take
@@ -357,7 +352,6 @@ inside this buffer."
   "Return the currently playing track."
   vuiet--playing-track)
 
-;;;###autoload
 (defun vuiet-stop ()
   "Stop playing and clear the mode line."
   (interactive)
@@ -366,49 +360,41 @@ inside this buffer."
   (setq-default mode-line-misc-info nil)
   (mpv-kill))
 
-;;;###autoload
 (defun vuiet-playing-artist ()
   "Return the currently playing artist."
   (vuiet-track-artist (vuiet--playing-track)))
 
-;;;###autoload
 (defun vuiet-playing-track-name ()
   "Return the currently playing track name."
   (vuiet-track-name (vuiet--playing-track)))
 
-;;;###autoload
 (defun vuiet-playing-track-str ()
   "Return the playing TRACK as a human-readable string."
   (vuiet--track-as-string (vuiet--playing-track)))
 
-;;;###autoload
 (defun vuiet-next ()
   "Skip the currently playing track and play the next."
   (interactive)
   ;; The on-kill-event hook ensures the functions does what it says.
   (mpv-kill))
 
-;;;###autoload
 (defun vuiet-replay ()
   "Play the currently playing track from the beginning."
   (interactive)
   ;; No such feature in mpv.el available. Simulate one.
   (mpv-seek-backward 9999))
 
-;;;###autoload
 (defun vuiet-play-pause ()
   "Toggle the play/pause status."
   (interactive)
   (mpv-pause))
 
-;;;###autoload
 (defun vuiet-playing-artist-info ()
   "Display info for the currently playing artist in a new buffer."
   (interactive)
   (when (vuiet--playing-track)
     (vuiet-artist-info (vuiet-playing-artist))))
 
-;;;###autoload
 (defun vuiet-playing-track-search-youtube ()
   "Open a youtube search for the currently playing track."
   (interactive)
@@ -424,14 +410,12 @@ inside this buffer."
    (format "https://last.fm/music/%s"
            (s-replace " " "+" artist))))
 
-;;;###autoload
 (defun vuiet-playing-artist-lastfm-page ()
   "Visit he currently playing artist lastfm page."
   (interactive)
   (when (vuiet--playing-track)
     (vuiet-artist-lastfm-page (vuiet-playing-artist))))
 
-;;;###autoload
 (defun vuiet-love-track ()
   "Add the currently playing track to the loved songs list."
   (interactive)
@@ -439,7 +423,6 @@ inside this buffer."
     (lastfm-track-love (vuiet-playing-artist)
                        (vuiet-playing-track-name))))
 
-;;;###autoload
 (defun vuiet-unlove-track ()
   "Remove the currently playing track from the loved songs list."
   (interactive)
@@ -447,7 +430,6 @@ inside this buffer."
     (lastfm-track-unlove (vuiet-playing-artist)
                          (vuiet-playing-track-name))))
 
-;;;###autoload
 (defun vuiet-playing-track-lyrics ()
   "Display the lyrics for the currently playing track in a new buffer.
 See `versuri-display' for the active keybindings inside this buffer."
@@ -562,7 +544,6 @@ The number of tracks is equal to VUIET-ARTIST-TRACKS-LIMIT."
                 :limit vuiet-artist-tracks-limit)
                random)))
 
-;;;###autoload
 (defun vuiet-play-playing-artist (random)
   "Play the currently playing artist's top tracks.
 If RANDOM is t, play the tracks at random, indefinitely.
@@ -599,7 +580,6 @@ VUIET-ARTIST-TRACKS-LIMIT."
   (vuiet-play (vuiet--artists-similar-tracks
                (mapcar #'s-trim (s-split "," artists)))))
 
-;;;###autoload
 (defun vuiet-play-playing-artist-similar ()
   "Play tracks from artists similar to the playing artist.
 Random tracks from random artists similar to the currently
@@ -638,7 +618,6 @@ equal to VUIET-ARTIST-TRACKS-LIMIT."
   (vuiet-play (vuiet--tags-similar-tracks
                (mapcar #'s-trim (s-split "," tags)))))
 
-;;;###autoload
 (defun vuiet-play-playing-tags-similar ()
   "Play tracks from artists with similar tags as the current tags.
 Random tracks from random artists that have tags equal to one of
