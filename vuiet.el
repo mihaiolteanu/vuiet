@@ -1,4 +1,4 @@
-;;; vuiet.el --- Discover and play music -*- lexical-binding: t -*-
+;;; vuiet.el --- The music player and explorer for Emacs -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2019-2020 Mihai Olteanu
 
