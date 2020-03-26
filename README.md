@@ -43,7 +43,7 @@ You can ask vuiet to play random tracks from random artists similar to an artist
 you already know and like. For example,
 
 ```emacs-lisp
-(vuiet-play-artist-similar "steven wilson")
+(vuiet-play-artist-similar '("steven wilson"))
 ```
 
 There is no limit to the number of artists specified in this call. New tracks
@@ -55,7 +55,7 @@ Or you can play random tracks from random artists that are tagged with any of
 the genres you specify,
 
 ```emacs-lisp
-(vuiet-play-tag-similar "classic rock, 80s")
+(vuiet-play-tag-similar '("classic rock" "80s"))
 ```
 
 There are multiple variations on these two type of playlists, some of them
@@ -128,12 +128,18 @@ option). You should have both of them installed.
 **vuiet-play-artist-similar** *artists*
 
     Play tracks from artists similar to ARTISTS.
+
+    If called directly, ARTISTS is a list of strings of the form
+    '(artist1 artist2 etc.)
+
+    If called interactively, multiple artists can be provided in the
+    minibuffer if they are sepparated by commas.
+
     Random tracks from random artists similar to one of the ARTISTS
-    are played.
-    The number of similar artists taken into account is equal to
-    VUIET-ARTIST-SIMILAR-LIMIT and the number of tracks is equal to
-    VUIET-ARTIST-TRACKS-LIMIT.
-    
+    are played.  The number of similar artists taken into account is
+    equal to VUIET-ARTIST-SIMILAR-LIMIT and the number of tracks is
+    equal to VUIET-ARTIST-TRACKS-LIMIT.
+  
 **vuiet-play-playing-artist-similar**
 
     Play tracks from artists similar to the playing artist.
@@ -146,11 +152,17 @@ option). You should have both of them installed.
 **vuiet-play-tag-similar** *tags*
 
     Play tracks from artists similar to TAGS.
+
+    If called directly, TAGS is a list of strings of the form '(tag1
+    tag2 etc.)
+
+    If called interactively, multiple tags can be provided in the
+    minibuffer if they are sepparated by commas.
+
     Random tracks from random artists that have tags equal to one of
-    the TAGS are played.
-    The number of artists with the given tag taken into account is
-    equal to VUIET-TAG-ARTISTS-LIMIT while the number of tracks is
-    equal to VUIET-ARTIST-TRACKS-LIMIT.
+    the TAGS are played.  The number of artists with the given tag
+    taken into account is equal to VUIET-TAG-ARTISTS-LIMIT while the
+    number of tracks is equal to VUIET-ARTIST-TRACKS-LIMIT.
     
 **vuiet-play-playing-tags-similar**
 
@@ -215,21 +227,15 @@ option). You should have both of them installed.
 **vuiet-play** *item (random nil)*
 
     Play the ITEM with mpv and scrobble to lastfm.
-    RANDOM is used only if the ITEM list is not already a generator.
+    If RANDOM is t, take a random track from ITEM.
 
-    If ITEM is a VUIET-TRACK object, play it.
-
-    If ITEM is a (ARTIST SONG) form, where ARTIST and SONG are
-    strings, create a VUIET-TRACK object and call this function again
-    with this object.
-
-    If ITEM is a list of (ARTIST SONG) forms, create a generator of
-    VUIET-TRACK objects and call VUIET-PLAY again with the generator.
-
-    If ITEM is a generator, play the next VUIET-TRACK object from
-    that generator and set an mpv hook on exit.  When the hook is
-    called (mvp exists, track finished playing) call VUIET-PLAY again
-    with the same generator.
+    ITEM can be a `vuiet-track', a list of artist and song name
+    strings, in which case they're played directly, or a list of
+    artist and songs names in which case they're transformed into a
+    generator, or a generator of tracks, either compiled or not, in
+    which case a new `vuiet-track' is extracted and played, setting
+    mpv up as such, that when the track finishes a new track will be
+    extracted and played from the generator.
 
 ## Music Browser
 
@@ -339,13 +345,22 @@ option). You should have both of them installed.
 
     Display the lyrics for the currently playing track in a new buffer.
     See `versuri-display' for the active keybindings inside this buffer.
-           
+                    
+**vuiet-update-mode-line**
+
+    Update the mode line.
+    
 ## Customization
 
 **vuiet-scrobble-timeout** *30*
 
     Time, in seconds, for the same song to play before scrobbling it.
-    A gigantic value basically disables scrobbling altogether.
+    
+**vuiet-scrobble-enabled** *t*
+
+    Enable/disable last.fm scrobbling.
+    Decide if the currently playing track should appear in your list
+    of recently played tracks on last.fm.
 
 **vuiet-artist-similar-limit** *15*
 
