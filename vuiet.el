@@ -44,9 +44,15 @@
   :prefix "vuiet-")
 
 (defcustom vuiet-scrobble-timeout 30
-  "Time, in seconds, for the same song to play before scrobbling it.
-A gigantic value basically disables scrobbling altogether."
+  "Time, in seconds, for the same song to play before scrobbling it."
   :type '(number :tag "seconds")
+  :group 'vuiet)
+
+(defcustom vuiet-scrobble-enabled t
+  "Enable/disable last.fm scrobbling.
+Decide if the currently playing track should appear in your list
+of recently played tracks on last.fm."
+  :type '(boolean :tag "enabled")
   :group 'vuiet)
 
 (defcustom vuiet-artist-similar-limit 15
@@ -355,6 +361,16 @@ inside this buffer."
   "Return the currently playing track duration."
   vuiet--playing-track-duration)
 
+(defun vuiet-enable-scrobbling ()
+  "Enable last.fm scrobbling."
+  (interactive)
+  (setf vuiet-scrobble-enabled t))
+
+(defun vuiet-disable-scrobbling ()
+  "Disable last.fm scrobbling."
+  (interactive)
+  (setf vuiet-scrobble-enabled nil))
+
 (defun vuiet-update-mode-line ()
   "Update the mode-line."
   (interactive)
@@ -482,10 +498,11 @@ See `versuri-display' for the active keybindings inside this buffer."
           (let ((event (cdr (car ev))))
             (when (string-equal event "playback-restart")
               (vuiet--set-playing-track track (mpv-get-duration))
-              (vuiet-update-mode-line)))))  
-  ;; If, after timeout, the same song is playing, scrobble it.
-  (run-at-time vuiet-scrobble-timeout nil
-               #'vuiet--scrobble-track track)  
+              (vuiet-update-mode-line)))))
+  (when vuiet-scrobble-enabled
+    ;; If, after timeout, the same song is playing, scrobble it.
+    (run-at-time vuiet-scrobble-timeout nil
+                 #'vuiet--scrobble-track track))
   (mpv-start
    "--no-video"
    (format "ytdl://ytsearch:%s" (vuiet--track-as-string track))))

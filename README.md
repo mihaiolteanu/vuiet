@@ -345,13 +345,22 @@ option). You should have both of them installed.
 
     Display the lyrics for the currently playing track in a new buffer.
     See `versuri-display' for the active keybindings inside this buffer.
-           
+                    
+**vuiet-update-mode-line**
+
+    Update the mode line.
+    
 ## Customization
 
 **vuiet-scrobble-timeout** *30*
 
     Time, in seconds, for the same song to play before scrobbling it.
-    A gigantic value basically disables scrobbling altogether.
+    
+**vuiet-scrobble-enabled** *t*
+
+    Enable/disable last.fm scrobbling.
+    Decide if the currently playing track should appear in your list
+    of recently played tracks on last.fm.
 
 **vuiet-artist-similar-limit** *15*
 
