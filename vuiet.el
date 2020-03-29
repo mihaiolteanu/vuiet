@@ -505,7 +505,8 @@ See `versuri-display' for the active keybindings inside this buffer."
                  #'vuiet--scrobble-track track))
   (mpv-start
    "--no-video"
-   (format "ytdl://ytsearch:%s" (vuiet--track-as-string track))))
+   (format "ytdl://ytsearch:%s title:\"%s\""
+            (vuiet-track-artist track) (vuiet-track-name track))))
 
 (defun vuiet--next-track (tracks)
   "Yield the next VUIET-TRACK object from the TRACKS list.
