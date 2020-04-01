@@ -517,6 +517,10 @@ If no more objects available, do a cleanup and return nil."
      (vuiet-stop)
      nil)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;                    Playlists
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (iter-defun vuiet--make-generator (songs random)
   "Make a generator of VUIET-TRACK objects from the SONGS list.
 If RANDOM is true, each call to the generator will yield a random
@@ -544,15 +548,12 @@ from the generator is played."
               (vuiet--play-track it)))))
   t)
 
+;;;###autoload
 (cl-defun vuiet-play (songs &key (random nil))
   "Play everyting in the SONGS list, randomly or sequentially.
 SONGS is a list of type ((artist1 song1) (artist2 song2) ...)."
   (vuiet--play-generator
    (vuiet--make-generator songs random)))
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Playlists
 
 ;;;###autoload
 (defun vuiet-play-artist (artist random)
