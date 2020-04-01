@@ -224,18 +224,10 @@ option). You should have both of them installed.
     `vuiet-album-info' for details and active keybindings inside this
     buffer.
 
-**vuiet-play** *item (random nil)*
+**vuiet-play** *songs (random nil)*
 
-    Play the ITEM with mpv and scrobble to lastfm.
-    If RANDOM is t, take a random track from ITEM.
-
-    ITEM can be a `vuiet-track', a list of artist and song name
-    strings, in which case they're played directly, or a list of
-    artist and songs names in which case they're transformed into a
-    generator, or a generator of tracks, either compiled or not, in
-    which case a new `vuiet-track' is extracted and played, setting
-    mpv up as such, that when the track finishes a new track will be
-    extracted and played from the generator.
+    Play everyting in the SONGS list, randomly or sequentially.
+    SONGS is a list of type ((artist1 song1) (artist2 song2) ...).
 
 ## Music Browser
 
