@@ -567,6 +567,7 @@ The number of tracks is equal to VUIET-ARTIST-TRACKS-LIMIT."
                :limit vuiet-artist-tracks-limit)
               :random random))
 
+;;;###autoload
 (defun vuiet-play-playing-artist (random)
   "Play the currently playing artist's top tracks.
 If RANDOM is t, play the tracks at random, indefinitely.
@@ -725,6 +726,7 @@ username given in the setup of the lastfm.el package."
                :limit vuiet-loved-tracks-limit)
               :random random))
 
+;;;###autoload
 (defun vuiet-play-recent-track ()
   "Play one of the recent listened tracks."
   (interactive)
@@ -749,6 +751,7 @@ tracks list."
                          :limit vuiet-artist-tracks-limit)))))
       (iter-yield (vuiet--new-track similar track)))))
 
+;;;###autoload
 (defun vuiet-play-loved-tracks-similar ()
   "Play tracks based on artists similar to loved tracks artists.
 Random tracks from random artists similar to a random artist from
