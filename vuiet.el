@@ -675,13 +675,18 @@ equal to VUIET-ARTIST-TRACKS-LIMIT."
     (mapcar #'car (lastfm-artist-get-top-tags
             (vuiet-playing-artist))))))
 
-
 ;;;###autoload
-(defun vuiet-play-track (artist name)
-  "Play track NAME from ARTIST."
-  (interactive (list (read-string "Artist: ")
-                     (read-string "Track Name: ")))
-  (vuiet-play `((,artist ,name))))
+(defun vuiet-play-track (&optional artist name)
+  "Play the song NAME from the given ARTIST.
+If called interactively, let the user select and play one of the
+ARTIST's top songs, where ARTIST is given in the minibuffer."
+  (interactive)
+  (if (and artist name)
+      (vuiet-play `((,artist ,name)))
+    (vuiet--ivy-play-song
+     (lastfm-artist-get-top-tracks
+      (read-string "Artist: ")
+      :limit vuiet-artist-tracks-limit))))
 
 ;;;###autoload
 (defun vuiet-play-track-search (track)

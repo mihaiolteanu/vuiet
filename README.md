@@ -175,7 +175,9 @@ option). You should have both of them installed.
 
 **vuiet-play-track** *artist name*
 
-    Play track NAME from ARTIST.
+    Play the song NAME from the given ARTIST.
+    If called interactively, let the user select and play one of the
+    ARTIST's top songs, where ARTIST is given in the minibuffer.
 
 **vuiet-play-track-search** *track*
 
