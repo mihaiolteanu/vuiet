@@ -577,6 +577,40 @@ The number of tracks is equal to VUIET-ARTIST-TRACKS-LIMIT."
     (vuiet-play-artist (vuiet-playing-artist)
                        random)))
 
+(defun vuiet-play-playing-track-album ()
+  "Play the full album of the currently playing track."
+  (interactive)
+  (when (vuiet--playing-track)
+    (let* ((artist (vuiet-playing-artist))
+           (song (vuiet-playing-track-name))
+           (album (car (lastfm-track-get-info artist song))))
+      (vuiet-play (lastfm-album-get-info artist album)))))
+
+(defun vuiet-info-playing-track-album ()
+  "Open an info buffer for the currently playing track album."
+  (interactive)
+  (when (vuiet--playing-track)
+    (let* ((artist (vuiet-playing-artist))
+           (song (vuiet-playing-track-name))
+           (album (car (lastfm-track-get-info artist song))))
+      (vuiet-album-info artist album))))
+
+;;;###autoload
+(defun vuiet-play-album (&optional artist album)
+  "Play the whole ALBUM of the given ARTIST.
+If called interactively, the album can be picked interactively
+from the ARTIST's top albums, where ARTIST is given in the
+minibuffer."
+  (interactive)
+  (if (and artist album)
+      (vuiet-play (lastfm-album-get-info artist album))
+    (let ((artist (read-string "Artist: ")))
+      (ivy-read (format "Play %s Album" artist)
+       (lastfm-artist-get-top-albums artist)
+       :action (lambda (album)
+                 (vuiet-play
+                  (lastfm-album-get-info artist (car album))))))))
+
 (iter-defun vuiet--artists-similar-tracks (artists)
   "Return a generator of tracks based on the given ARTISTS.
 The generator yields top tracks from artists similar to the given

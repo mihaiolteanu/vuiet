@@ -125,6 +125,20 @@ option). You should have both of them installed.
     If RANDOM is t, play the tracks at random, indefinitely.
     The number of tracks is equal to VUIET-ARTIST-TRACKS-LIMIT.
 
+**vuiet-play-playing-track-album**
+
+    Play the full album of the currently playing track.
+
+**vuiet-info-playing-track-album**
+
+    Open an info buffer for the currently playing track album.
+    
+**vuiet-play-album** *artist album*
+
+    Play the whole ALBUM of the given ARTIST.
+    If called interactively, the album can be picked interactively
+    from the ARTIST's top albums.
+
 **vuiet-play-artist-similar** *artists*
 
     Play tracks from artists similar to ARTISTS.
