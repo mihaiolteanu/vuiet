@@ -142,26 +142,16 @@ option). You should have both of them installed.
 **vuiet-play-artist-similar** *artists*
 
     Play tracks from artists similar to ARTISTS.
-
-    If called directly, ARTISTS is a list of strings of the form
-    '(artist1 artist2 etc.)
-
+    ARTISTS is a list of strings of the form '(artist1 artist2 etc.)
     If called interactively, multiple artists can be provided in the
     minibuffer if they are sepparated by commas.
-
-    Random tracks from random artists similar to one of the ARTISTS
-    are played.  The number of similar artists taken into account is
-    equal to VUIET-ARTIST-SIMILAR-LIMIT and the number of tracks is
-    equal to VUIET-ARTIST-TRACKS-LIMIT.
   
 **vuiet-play-playing-artist-similar**
 
     Play tracks from artists similar to the playing artist.
-    Random tracks from random artists similar to the currently
-    playing artist are played.
-    The number of similar artists taken into account is equal to
-    VUIET-ARTIST-SIMILAR-LIMIT and the number of tracks is equal to
-    VUIET-ARTIST-TRACKS-LIMIT.
+    This function is similar to `vuiet-play-artist-similar', only the
+    list of artists is limited to the artist of the currently playing
+    track.
 
 **vuiet-play-tag-similar** *tags*
 
@@ -321,6 +311,14 @@ option). You should have both of them installed.
 
     Play the currently playing track from the beginning.
     
+**vuiet-seek-backward** *(seconds 5)*
+
+    Seek backward the given number of SECONDS.
+
+**vuiet-seek-forward** *(seconds 5)*
+
+    Seek forward the given number of SECONDS.
+
 **vuiet-play-pause**
 
     Toggle the play/pause status.
@@ -343,11 +341,11 @@ option). You should have both of them installed.
     
 **vuiet-love-track**
 
-    Add the currently playing track to the loved songs list.
+    Add the currently playing track to the user loved songs.
     
 **vuiet-unlove-track**
 
-    Remove the currently playing track from the loved songs list.
+    Remove the currently playing track from the user loved songs.
     
 **vuiet-playing-track-lyrics**
 
