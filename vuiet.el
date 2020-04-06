@@ -284,7 +284,7 @@ s        Choose a song to play, with ivy."
                for artist = (car entry)
                for song = (cadr entry)
                do (insert
-                   (format (concat "%3s. [[elisp:(vuiet-play '(\"%s\" \"%s\"))][%-"
+                   (format (concat "%3s. [[elisp:(vuiet-play '((\"%s\" \"%s\")))][%-"
                                    (number-to-string max-len)
                                    "s  %s]]\n")
                            i artist song artist song))
@@ -318,7 +318,7 @@ l   save lyrics for this album."
                for duration = (format-seconds
                                "%m:%02s" (string-to-number (caddr entry)))
                do (insert
-                   (format (concat "%2s. [[elisp:(vuiet-play '(\"%s\" \"%s\"))][%-"
+                   (format (concat "%2s. [[elisp:(vuiet-play '((\"%s\" \"%s\")))][%-"
                                    (number-to-string (1+ max-len))
                                    "s]] %s\n")
                            i artist song song duration)))
