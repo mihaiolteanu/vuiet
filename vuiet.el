@@ -755,6 +755,27 @@ username given in the setup of the lastfm.el package."
               :random random))
 
 ;;;###autoload
+(defun vuiet-play-artist-loved-tracks (&optional artist random)
+  "Play all the ARTIST tracks found in the user loved tracks.
+Similar to `vuiet-play-loved-tracks', but play only the tracks
+from the given ARTIST."
+  (interactive)
+  (unless artist
+    (setf artist
+          (ivy-read "Artist: "
+                    (seq-uniq
+                     (mapcar #'car (lastfm-user-get-loved-tracks
+                             :limit vuiet-loved-tracks-limit))))))
+  (unless random
+    (setf random (y-or-n-p "Play random? ")))
+  (vuiet-play
+   (seq-filter (lambda (t)
+                 (string-match artist (car t)))
+               (lastfm-user-get-loved-tracks
+                :limit vuiet-loved-tracks-limit))
+   :random random))
+
+;;;###autoload
 (defun vuiet-play-recent-track ()
   "Play one of the recent listened tracks."
   (interactive)

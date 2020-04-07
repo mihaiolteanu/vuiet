@@ -208,6 +208,12 @@ option). You should have both of them installed.
     The user loved tracks list is the one associated with the
     username given in the setup of the lastfm.el package.
 
+**vuiet-play-artist-loved-tracks** *artist random*
+
+    Play all the ARTIST tracks found in the user loved tracks.
+    Similar to `vuiet-play-loved-tracks', but play only the tracks
+    from the given ARTIST.
+
 **vuiet-play-recent-track**
 
     Play one of the recent listened tracks.
