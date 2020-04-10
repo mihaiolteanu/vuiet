@@ -769,8 +769,8 @@ from the given ARTIST."
   (unless random
     (setf random (y-or-n-p "Play random? ")))
   (vuiet-play
-   (seq-filter (lambda (t)
-                 (string-match artist (car t)))
+   (seq-filter (lambda (item)
+                 (string-match artist (car item)))
                (lastfm-user-get-loved-tracks
                 :limit vuiet-loved-tracks-limit))
    :random random))
