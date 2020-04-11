@@ -547,7 +547,7 @@ See `versuri-display' for the active keybindings inside this buffer."
             ;; Update the mode-line after the track has been found on youtube
             ;; and playback has started. This gives us a chance to also display
             ;; the total duration of the song besides the artist and song name.
-            (when (string-equal event "playback-restart")
+            (when (string-equal event "file-loaded")
               (vuiet--set-playing-track track (mpv-get-duration))
               (vuiet-update-mode-line)))))
   (when vuiet-scrobble-enabled
