@@ -104,6 +104,32 @@ taking into consideration only the most recently loved tracks."
   (format "%s %s" (vuiet-track-artist track) (vuiet-track-name track)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;                     Utils
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defmacro vuiet--artist-from-minibuffer-if-nil (artist)
+  "If ARTIST is nil, request an artist from the minibuffer.
+Use lastfm for autocomplete if, while in the minibuffer, the TAB
+key is pressed."
+  (declare (debug t)
+           (indent defun))
+  `(unless ,artist
+     (let ((keymap (copy-keymap minibuffer-local-map)))
+       (define-key keymap (kbd "<tab>")
+         (lambda () (interactive)
+           (ivy-read "Artist: "
+                     (lastfm-artist-search (minibuffer-contents))
+                     :action (lambda (s)   
+                               (setf ,artist (car s))
+                               (delete-minibuffer-contents)
+                               (exit-minibuffer)))))
+       (let ((mini (read-from-minibuffer
+                    "Artist (TAB for completion): " nil keymap)))
+         (unless (string-empty-p mini)
+           ;; if completion was used, the minibuffer returns an empty string.
+           (setf ,artist mini))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;                     Browser
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -162,13 +188,14 @@ a local binding such that KEY executes EXPR."
                     (vuiet-artist-info (car a)))))
 
 ;;;###autoload
-(defun vuiet-artist-info (artist)
+(defun vuiet-artist-info (&optional artist)
   "Display info about ARTIST in a new buffer.
 
 p   play all the artist songs, sequentially.
 s   select and display info for a similar artist with ivy.
 l   visit the artist's lastfm page."
-  (interactive "sArtist: ")
+  (interactive)
+  (vuiet--artist-from-minibuffer-if-nil artist)
   (vuiet--with-vuiet-buffer artist
     (let* ((artist-info (lastfm-artist-get-info artist))
            (songs (lastfm-artist-get-top-tracks
@@ -297,13 +324,20 @@ s        Choose a song to play, with ivy."
                  (vuiet-loved-tracks-info (1- page))))
         ("s" . (vuiet--ivy-play-song songs)))))))
 
-(defun vuiet-album-info (artist album)
+(defun vuiet-album-info (&optional artist album)
   "Display info about the ARTIST's ALBUM in a new buffer.
 
 s   choose a song with ivy.
 a   pick another album with ivy.
 p   play all songs from the album.
 l   save lyrics for this album."
+  (interactive)
+  (vuiet--artist-from-minibuffer-if-nil artist)
+  (unless album
+    (ivy-read (format "%s Album:" artist)
+            (lastfm-artist-get-top-albums artist)
+            :action (lambda (a)
+                      (setf album (car a)))))
   (vuiet--with-vuiet-buffer (format "%s - %s" artist album)
     (let* ((songs (lastfm-album-get-info artist album))
            ;; Align song duration in one nice column. For this, I need to know
@@ -573,12 +607,14 @@ SONGS is a list of type ((artist1 song1) (artist2 song2) ...)."
    (vuiet--make-generator songs random)))
 
 ;;;###autoload
-(defun vuiet-play-artist (artist random)
+(defun vuiet-play-artist (&optional artist random)
   "Play the ARTIST top tracks.
 If RANDOM is t, play the tracks at random, indefinitely.
 The number of tracks is equal to VUIET-ARTIST-TRACKS-LIMIT."
-  (interactive (list (read-string "Artist: ")
-                     (y-or-n-p "Play random? ")))
+  (interactive)
+  (vuiet--artist-from-minibuffer-if-nil artist)
+  (unless random
+    (setf random (y-or-n-p (format "%s: Play random? " artist))))
   (vuiet-play (lastfm-artist-get-top-tracks
                artist
                :limit vuiet-artist-tracks-limit)
@@ -621,12 +657,12 @@ minibuffer."
   (interactive)
   (if (and artist album)
       (vuiet-play (lastfm-album-get-info artist album))
-    (let ((artist (read-string "Artist: ")))
-      (ivy-read (format "Play %s Album" artist)
+    (vuiet--artist-from-minibuffer-if-nil artist)
+    (ivy-read (format "Play %s Album" artist)
        (lastfm-artist-get-top-albums artist)
        :action (lambda (album)
                  (vuiet-play
-                  (lastfm-album-get-info artist (car album))))))))
+                  (lastfm-album-get-info artist (car album)))))))
 
 (iter-defun vuiet--artists-similar-tracks (artists)
   "Return a generator of tracks based on the given ARTISTS.
@@ -644,12 +680,13 @@ artist or the given list of artists."
       (iter-yield (vuiet--new-track artist track)))))
 
 ;;;###autoload
-(defun vuiet-play-artist-similar (artists)
+(defun vuiet-play-artist-similar (&optional artists)
   "Play tracks from artists similar to ARTISTS.
 ARTISTS is a list of strings of the form '(artist1 artist2 etc.)
 If called interactively, multiple artists can be provided in the
 minibuffer if they are sepparated by commas."
-  (interactive "sArtist(s): ")
+  (interactive)
+  (vuiet--artist-from-minibuffer-if-nil artists)
   (vuiet--play-generator
    (vuiet--artists-similar-tracks
     (if (stringp artists)
@@ -723,10 +760,10 @@ ARTIST's top songs, where ARTIST is given in the minibuffer."
   (interactive)
   (if (and artist name)
       (vuiet-play `((,artist ,name)))
+    (vuiet--artist-from-minibuffer-if-nil artist)
     (vuiet--ivy-play-song
-     (lastfm-artist-get-top-tracks
-      (read-string "Artist: ")
-      :limit vuiet-artist-tracks-limit))))
+     (lastfm-artist-get-top-tracks artist
+      :limit vuiet-artist-tracks-limit))) )
 
 ;;;###autoload
 (defun vuiet-play-track-search (track)
