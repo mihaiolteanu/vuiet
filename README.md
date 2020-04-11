@@ -337,6 +337,10 @@ option). You should have both of them installed.
 
     Open a youtube search for the currently playing track.
     
+**vuiet-playing-track-continue-on-youtube**
+
+    Pause vuiet and continue playing on youtube.
+    
 **vuiet-artist-lastfm-page** *artist*
     
     Visit the ARTIST lastfm page."
