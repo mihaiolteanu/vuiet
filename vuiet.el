@@ -254,7 +254,7 @@ artist."
                finally (return (cl-values artist song)))
     (ivy-read "Play song: "
               (mapcar (lambda (song)
-                   (list (format (s-format  "%-$0s - %-$1s" 'elt
+                   (list (format (s-format  "%-$0s   %-$1s" 'elt
                                             ;; Add the padding
                                             `(,artist-max-len ,song-max-len))
                                  ;; Add the actual artist and song.
