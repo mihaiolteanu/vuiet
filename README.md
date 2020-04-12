@@ -329,6 +329,18 @@ option). You should have both of them installed.
 
     Toggle the play/pause status.
     
+**vuiet-player-volume**
+
+    Get the music player volume, between 0% and 100%.
+    
+**vuiet-player-volume-inc**
+
+    Increase the music player volume by STEP percent.
+
+**vuiet-player-volume-dec**
+    
+    Decrease the music player volume by STEP percent.
+    
 **vuiet-playing-artist-info**
 
     Display info for the currently playing artist in a new buffer.
