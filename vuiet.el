@@ -474,7 +474,7 @@ inside this buffer."
 
 (defun vuiet-player-volume ()
   "Get the music player volume, between 0% and 100%."
-  (mpv-get-property "ao-volume"))
+  (mpv-get-property "volume"))
 
 (cl-defun vuiet-player-volume-inc (&key (step 1))
   "Increase the music player volume by STEP percent."
@@ -482,7 +482,7 @@ inside this buffer."
   (let* ((volume (vuiet-player-volume))
          (new-volume (+ volume step)))
     (when (<= new-volume 100)
-      (mpv-set-property "ao-volume" new-volume))))
+      (mpv-set-property "volume" new-volume))))
 
 (cl-defun vuiet-player-volume-dec (&key (step 1))
   "Decrease the mpv player volume by STEP percent."
@@ -490,7 +490,7 @@ inside this buffer."
   (let* ((volume (vuiet-player-volume))
          (new-volume (- volume step)))
     (when (>= new-volume 0)
-      (mpv-set-property "ao-volume" new-volume))))
+      (mpv-set-property "volume" new-volume))))
 
 (defun vuiet-playing-artist-info ()
   "Display info for the currently playing artist in a new buffer."
