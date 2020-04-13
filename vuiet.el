@@ -851,6 +851,7 @@ from the given ARTIST."
 ;;;###autoload
 (defun vuiet-play-recent-track ()
   "Play one of the recent listened tracks."
+The number of tracks shown is equal to VUIET-RECENT-TRACKS-LIMIT."
   (interactive)
   (vuiet--ivy-play-song (lastfm-user-get-recent-tracks
 			 :limit vuiet-recent-tracks-limit)))
