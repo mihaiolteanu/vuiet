@@ -445,14 +445,20 @@ inside this buffer."
 (defun vuiet-next ()
   "Skip the currently playing track and play the next."
   (interactive)
-  ;; The on-kill-event hook ensures the functions does what it says.
-  (mpv-kill))
+  (condition-case nil
+      (mpv-run-command "playlist-next")
+    (error "No track available; Try again")))
+
+(defun vuiet-previous ()
+  (interactive)
+  (condition-case nil
+      (mpv-run-command "playlist-prev")
+    (error "This is the first track")))
 
 (defun vuiet-replay ()
   "Play the currently playing track from the beginning."
   (interactive)  
-  (mpv-seek 1)
-  (vuiet-update-mode-line))
+  (mpv-seek 1))
 
 (cl-defun vuiet-seek-backward (&optional (seconds 5))
   "Seek backward the given number of SECONDS."
@@ -559,33 +565,15 @@ See `versuri-display' for the active keybindings inside this buffer."
                              (vuiet-track-name track)
                              (int-to-string timestamp)))))
 
-(defun vuiet--play-track (track)
-  "Play the TRACK in the background with mpv and ytdl."
-  (setf mpv-on-event-hook
-        (lambda (ev)
-          (let ((event (cdr (car ev))))
-            ;; Update the mode-line after the track has been found on youtube
-            ;; and playback has started. This gives us a chance to also display
-            ;; the total duration of the song besides the artist and song name.
-            (when (string-equal event "file-loaded")
-              (vuiet--set-playing-track track (mpv-get-duration))
-              (vuiet-update-mode-line)))))
-  (when vuiet-scrobble-enabled
-    ;; If, after timeout, the same song is playing, scrobble it.
-    (run-at-time vuiet-scrobble-timeout nil
-                 #'vuiet--scrobble-track track))
-  (mpv-start
-   "--no-video"
-   (format "ytdl://ytsearch:%s" (vuiet--track-as-string track))))
-
 (defun vuiet--next-track (tracks)
   "Yield the next VUIET-TRACK object from the TRACKS list.
 If no more objects available, do a cleanup and return nil."
   (condition-case nil
       (iter-next tracks)
-    ;; No more tracks left.
     (iter-end-of-sequence
-     (vuiet-stop)
+     (awhen (vuiet--playlists-remove)
+       (vuiet--generator-current-set (vuiet--playlist-generator it))
+       (vuiet--mpv-append-urls (vuiet--playlist-urls it)))
      nil)))
 
 ;;;:;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -605,25 +593,125 @@ will yield each of the (length songs) elements, sequentially."
       (iter-yield
        (vuiet--new-track (car song) (cadr song))))))
 
-(defun vuiet--play-generator (generator)
-  "Play one track from the GENERATOR.
-Set mvp up so that after quiting (track finishes), the next item
-from the generator is played."
-  (vuiet-stop)                          ;Cleanup
-  (vuiet--play-track (vuiet--next-track generator))
-  (setf mpv-on-exit-hook
-        (lambda (&rest event)
-          ;; A kill event (mpv closes) is "registered" as nil.
-          (unless event            
-            (awhen (vuiet--next-track generator)
-              (vuiet--play-track it)))))
-  t)
+;; Keep a hash table of youtube track ids and vuiet-tracks
+(let ((id-tracks (make-hash-table :test 'equal)))
+  (defun vuiet--add-id-track (id track)
+    (puthash id track id-tracks))
 
+  (defun vuiet--get-track-from-id (id)
+    (gethash id id-tracks)))
+
+(defun vuiet--ytdl-search-track-id (filename)
+  "The 11 id size is NOT officially endorsed by youtube.
+It might change in the future!"
+  (s-right 11 (car (s-split "\\." filename))))
+
+(defun vuiet--playing-track-youtube-id ()
+  (cadr (s-split "=" (mpv-get-property "filename"))))
+
+(cl-defstruct vuiet--playlist
+  urls generator)
+
+(defun vuiet--new-playlist (urls generator)
+  (make-vuiet--playlist :urls urls
+                        :generator generator))
+
+(let ((playlists (make-ring 20)))
+  (defun vuiet--playlists-store (playlist)
+    (ring-insert-at-beginning playlists playlist))
+
+  (defun vuiet--playlists-remove ()
+    (condition-case nil
+        (ring-remove playlists)
+      (error
+       ;; No more playlists available
+       nil)))
+  (defun vuiet--return-playlists ()
+    playlists))
+
+(let (generator)
+  (defun vuiet--generator-curent ()
+    generator)
+  
+  (defun vuiet--generator-current-set (gen)
+    (setf generator gen)))
+
+(defun vuiet--mpv-remaining-urls ()
+  (let ((pos (mpv-get-property "playlist-pos-1"))
+        (count (mpv-get-property "playlist-count")))
+    (cl-loop for c from pos to (- count 1)
+             collect (mpv-get-property
+                      (format "playlist/%s/filename" c)))))
+
+(defun vuiet--mpv-append-urls (urls)
+  (mapcar (lambda (url)
+            (mpv-run-command "loadfile" url "append-play"))
+          urls))
+
+(defun vuiet--mpv-clear-urls ()
+  "Remove all the urls from the mpv playlist."
+  (mpv-run-command "playlist-clear")
+  (mpv-run-command "playlist-remove" 0))
+
+(defun vuiet--mpv-buffered-urls ()
+  (- (mpv-get-property "playlist-count")
+     (mpv-get-property "playlist-pos-1")))
+
+(defun vuiet--mpv-append-track (generator)
+  "Get the next track from the GENERATOR, find its youtube url
+and append it to the mpv playlist."
+  (awhen (vuiet--next-track generator)
+    (set-process-filter
+     (start-process "ytdl" nil "youtube-dl"
+                    (format "ytsearch:%s" (vuiet--track-as-string it))
+                    "--get-filename")
+     (lambda (_ filename)
+       ;;(message (format "Filename: %s" filename))
+       (let* ((id (vuiet--ytdl-search-track-id filename))
+              (url (concat "https://www.youtube.com/watch?v=" id)))
+         ;;(message (format "%s, %s" id it))
+         (vuiet--add-id-track id it)
+         (mpv-run-command "loadfile" url "append-play"))))))
+
+(defun vuiet--play (generator)
+  (if (mpv-live-p)
+      (let ((remaining-urls (vuiet--mpv-remaining-urls)))
+        (vuiet--mpv-clear-urls)
+        (when remaining-urls
+          (vuiet--playlists-store
+           (vuiet--new-playlist remaining-urls generator))))
+    ;; Vuiet startup
+    (mpv-start "--no-video"
+               "--idle=yes"
+               "--keep-open=yes")
+    (setf mpv-on-event-hook
+          (lambda (event)        
+            ;;(message (cdr (car event)))
+            (pcase (cdr (car event))
+              ("playback-restart"            
+               (mpv-set-property "pause" "no"))
+              ("start-file"
+               (when (< (vuiet--mpv-buffered-urls) 1)
+                 (vuiet--mpv-append-track (vuiet--generator-curent))))
+              ("file-loaded"
+               (let* ((id (vuiet--playing-track-youtube-id))
+                      (track (vuiet--get-track-from-id id)))
+                 ;;(message (format "File loaded, id: %s, track: %s" id track))
+                 (vuiet--set-playing-track track (mpv-get-duration))
+                 (vuiet-update-mode-line)
+                 (mpv-set-property "pause" "no")
+                 (when vuiet-scrobble-enabled
+                   (run-at-time vuiet-scrobble-timeout nil
+                                #'vuiet--scrobble-track track))))))))
+
+  (vuiet--generator-current-set generator)
+  (vuiet--mpv-append-track      generator))
+ 
 ;;;###autoload
 (cl-defun vuiet-play (songs &key (random nil))
   "Play everyting in the SONGS list, randomly or sequentially.
 SONGS is a list of type ((artist1 song1) (artist2 song2) ...)."
-  (vuiet--play-generator
+  (vuiet--play
    (vuiet--make-generator songs random)))
 
 ;;;###autoload
@@ -707,7 +795,7 @@ If called interactively, multiple artists can be provided in the
 minibuffer if they are sepparated by commas."
   (interactive)
   (vuiet--artist-from-minibuffer-if-nil artists)
-  (vuiet--play-generator
+  (vuiet--play
    (vuiet--artists-similar-tracks
     (if (stringp artists)
         ;; The function was called interactively.
@@ -752,7 +840,7 @@ the TAGS are played.  The number of artists with the given tag
 taken into account is equal to VUIET-TAG-ARTISTS-LIMIT while the
 number of tracks is equal to VUIET-ARTIST-TRACKS-LIMIT."
   (interactive "sTag(s): ")
-  (vuiet--play-generator
+  (vuiet--play
    (vuiet--tags-similar-tracks
     (if (stringp tags)
         ;; The function was called interactively.
@@ -767,7 +855,7 @@ The number of artists with the given tag taken into account is
 equal to VUIET-TAG-ARTISTS-LIMIT while the number of tracks is
 equal to VUIET-ARTIST-TRACKS-LIMIT."
   (interactive)
-  (vuiet--play-generator
+  (vuiet--play
    (vuiet--tags-similar-tracks
     (mapcar #'car (lastfm-artist-get-top-tags
             (vuiet-playing-artist))))))
@@ -879,7 +967,7 @@ The number of similar artists taken into account is equal to
 VUIET-ARTIST-SIMILAR-LIMIT and the number of tracks is equal to
 VUIET-ARTIST-TRACKS-LIMIT."
   (interactive)
-  (vuiet--play-generator (vuiet--loved-tracks-similar-tracks)))
+  (vuiet--play (vuiet--loved-tracks-similar-tracks)))
 
 (provide 'vuiet)
 
