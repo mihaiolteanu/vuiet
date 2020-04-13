@@ -217,7 +217,6 @@ option). You should have both of them installed.
 **vuiet-play-recent-track**
 
     Play one of the recent listened tracks.
-    The number of tracks shown is equal to VUIET-RECENT-TRACKS-LIMIT.
 
 **vuiet-play-loved-tracks-similar**
 
@@ -422,10 +421,3 @@ option). You should have both of them installed.
     A number higher than your actual lastfm loved tracks, will take
     all of them into consideration.  A lower values is useful for
     taking into consideration only the most recently loved tracks.
-
-**vuiet-recent-tracks-limit** *25*
-
-    Number of recents tracks.
-    A number higher than your actual lastmf recent tracks, will take
-    all of them into consideration.  A lower value is useful for
-    taking into consideration only the most recently played tracks.
