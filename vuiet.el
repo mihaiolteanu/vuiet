@@ -91,6 +91,11 @@ taking into consideration only the most recently loved tracks."
   :type '(number :tag "count")
   :group 'vuiet)
 
+(defcustom vuiet-recent-tracks-limit 25
+  "Number of recent played tracks to show."
+  :type '(number :tag "count")
+  :group 'vuiet)
+
 (cl-defstruct vuiet-track
   artist name)
 
@@ -846,9 +851,10 @@ from the given ARTIST."
 ;;;###autoload
 (defun vuiet-play-recent-track ()
   "Play one of the recent listened tracks."
+The number of tracks shown is equal to VUIET-RECENT-TRACKS-LIMIT."
   (interactive)
   (vuiet--ivy-play-song (lastfm-user-get-recent-tracks
-                         :limit 25)))
+			 :limit vuiet-recent-tracks-limit)))
 
 (iter-defun vuiet--loved-tracks-similar-tracks ()
   "Return a generator of tracks based on the user's loved tracks.
