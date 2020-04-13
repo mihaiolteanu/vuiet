@@ -217,6 +217,7 @@ option). You should have both of them installed.
 **vuiet-play-recent-track**
 
     Play one of the recent listened tracks.
+    The number of tracks shown is equal to VUIET-RECENT-TRACKS-LIMIT.
 
 **vuiet-play-loved-tracks-similar**
 
