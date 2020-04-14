@@ -55,6 +55,22 @@ of recently played tracks on last.fm."
   :type '(boolean :tag "enabled")
   :group 'vuiet)
 
+(defcustom vuiet-update-mode-line-automatically t
+  "Enable/disable the automatic update of the mode-line.
+If enabled, the mode-line is automatically updated after
+`vuiet-update-mode-line-interval' seconds. More specifically,
+`vuiet-update-mode-line' is called periodically while a track is
+playing to update it's current playback position."
+  :type '(boolean :tab "enabled")
+  :group 'vuiet)
+
+(defcustom vuiet-update-mode-line-interval 10
+  "Timeout, in seconds, after which to update the mode-line.
+See the `vuiet-update-mode-line-automatically' custom variable
+for details."
+  :type '(number :tag "seconds")
+  :group 'vuiet)
+
 (defcustom vuiet-artist-similar-limit 15
   "Number of artists similar to the given artist.
 When considering artists similar to a given artist, take as many
@@ -376,6 +392,19 @@ inside this buffer."
 ;;                       Player
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(let (timer)
+  (defun vuiet--set-update-mode-line-timer ()
+    (unless timer
+      (when vuiet-update-mode-line-automatically
+        (setf timer
+         (run-at-time vuiet-update-mode-line-interval
+                      vuiet-update-mode-line-interval
+                      #'vuiet-update-mode-line)))))
+
+  (defun vuiet--reset-update-mode-line-timer ()
+    (cancel-timer timer)
+    (setf timer nil)))
+
 (let (playing-track)
   (defun vuiet--playing-track-set (track)
     "Update the currently playing track."
@@ -398,16 +427,20 @@ inside this buffer."
 (defun vuiet-update-mode-line (&optional position)
   "Update the mode-line."
   (interactive)
-  (if (not (mpv-live-p))
-      (setq-default mode-line-misc-info nil)
-    (let ((track (vuiet--playing-track)))
+  (let ((track (vuiet--playing-track)))
+    (when track
       (setq-default mode-line-misc-info
-     (list (format "%s - %s [%s/%s] "
-                   (vuiet-track-artist   track)
-                   (vuiet-track-name     track)
-                   (format-time-string
-                    "%M:%S" (or position (mpv-get-playback-position)))
-                   (vuiet-track-duration track))))))
+        (list (format "%s - %s [%s/%s] "
+                (vuiet-track-artist   track)
+                (vuiet-track-name     track)
+                (format-time-string "%M:%S"
+                 (or position
+                     ;; At startup, the running track may be set, by the
+                     ;; file might not be loaded yet.
+                     (condition-case nil
+                         (mpv-get-playback-position)
+                       (error 0))))
+                (vuiet-track-duration track))))))
   (force-mode-line-update t))
 
 (defun vuiet-stop ()
@@ -416,7 +449,8 @@ inside this buffer."
   (setf vuiet--playing-track nil
         mpv-on-exit-hook nil)
   (mpv-kill)
-  (vuiet-update-mode-line))
+  (vuiet--reset-update-mode-line-timer)
+  (setq-default mode-line-misc-info nil))
 
 (defun vuiet-playing-artist ()
   "Return the currently playing artist."
@@ -449,7 +483,8 @@ inside this buffer."
 (defun vuiet-replay ()
   "Play the currently playing track from the beginning."
   (interactive)  
-  (mpv-seek 1))
+  (mpv-seek 1)
+  (vuiet-update-mode-line))
 
 (cl-defun vuiet-seek-backward (&optional (seconds 5))
   "Seek backward the given number of SECONDS."
@@ -694,7 +729,8 @@ and append it to the mpv playlist."
                                 #'vuiet--scrobble-track track))))))))
 
   (vuiet--generator-current-set generator)
-  (vuiet--mpv-append-track      generator))
+  (vuiet--mpv-append-track      generator)
+  (vuiet--set-update-mode-line-timer))
 
 ;;;###autoload
 (cl-defun vuiet-play (songs &key (random nil))
