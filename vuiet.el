@@ -92,12 +92,13 @@ taking into consideration only the most recently loved tracks."
   :group 'vuiet)
 
 (cl-defstruct vuiet-track
-  artist name)
+  artist name duration)
 
-(defun vuiet--new-track (artist name)
+(defun vuiet--new-track (artist name &optional duration)
   "Prepare the ARTIST and NAME before creating a TRACK object."
-  (make-vuiet-track :artist (s-trim artist)
-                    :name   (s-trim name)))
+  (make-vuiet-track :artist   (s-trim artist)
+                    :name     (s-trim name)
+                    :duration (or duration "")))
 
 (defun vuiet--track-as-string (track)
   "Return TRACK as a human-readable string."
@@ -378,23 +379,14 @@ inside this buffer."
 ;;                       Player
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defconst vuiet--playing-track nil
-  "Currently playing track.")
-(defconst vuiet--playing-track-duration nil
-  "Duration, in seconds, of the currently playing track.")
+(let (playing-track)
+  (defun vuiet--playing-track-set (track)
+    "Update the currently playing track."
+    (setf playing-track track))
 
-(defun vuiet--set-playing-track (track duration)
-  "Update the currently playing track and duration."
-  (setf vuiet--playing-track track)
-  (setf vuiet--playing-track-duration duration))
-
-(defun vuiet--playing-track ()
-  "Return the currently playing track."
-  vuiet--playing-track)
-
-(defun vuiet--playing-track-duration ()
-  "Return the currently playing track duration."
-  vuiet--playing-track-duration)
+  (defun vuiet--playing-track ()
+    "Return the currently playing track."
+    playing-track))
 
 (defun vuiet-enable-scrobbling ()
   "Enable last.fm scrobbling."
@@ -406,17 +398,19 @@ inside this buffer."
   (interactive)
   (setf vuiet-scrobble-enabled nil))
 
-(defun vuiet-update-mode-line ()
+(defun vuiet-update-mode-line (&optional position)
   "Update the mode-line."
   (interactive)
   (if (not (mpv-live-p))
       (setq-default mode-line-misc-info nil)
-    (setq-default mode-line-misc-info
+    (let ((track (vuiet--playing-track)))
+      (setq-default mode-line-misc-info
      (list (format "%s - %s [%s/%s] "
-                   (vuiet-track-artist (vuiet--playing-track))
-                   (vuiet-track-name   (vuiet--playing-track))
-                   (format-time-string "%M:%S" (mpv-get-playback-position))
-                   (format-time-string "%M:%S" (vuiet--playing-track-duration))))))
+                   (vuiet-track-artist   track)
+                   (vuiet-track-name     track)
+                   (format-time-string
+                    "%M:%S" (or position (mpv-get-playback-position)))
+                   (vuiet-track-duration track))))))
   (force-mode-line-update t))
 
 (defun vuiet-stop ()
@@ -601,11 +595,6 @@ will yield each of the (length songs) elements, sequentially."
   (defun vuiet--get-track-from-id (id)
     (gethash id id-tracks)))
 
-(defun vuiet--ytdl-search-track-id (filename)
-  "The 11 id size is NOT officially endorsed by youtube.
-It might change in the future!"
-  (s-right 11 (car (s-split "\\." filename))))
-
 (defun vuiet--playing-track-youtube-id ()
   (cadr (s-split "=" (mpv-get-property "filename"))))
 
@@ -660,18 +649,21 @@ It might change in the future!"
 (defun vuiet--mpv-append-track (generator)
   "Get the next track from the GENERATOR, find its youtube url
 and append it to the mpv playlist."
-  (awhen (vuiet--next-track generator)
-    (set-process-filter
-     (start-process "ytdl" nil "youtube-dl"
-                    (format "ytsearch:%s" (vuiet--track-as-string it))
-                    "--get-filename")
-     (lambda (_ filename)
-       ;;(message (format "Filename: %s" filename))
-       (let* ((id (vuiet--ytdl-search-track-id filename))
-              (url (concat "https://www.youtube.com/watch?v=" id)))
-         ;;(message (format "%s, %s" id it))
-         (vuiet--add-id-track id it)
-         (mpv-run-command "loadfile" url "append-play"))))))
+  (let ((track (vuiet--next-track generator)))
+    (when track
+      (set-process-filter
+       (start-process "ytdl" nil "youtube-dl"
+                      (format "ytsearch:%s" (vuiet--track-as-string track))
+                      "--get-id"
+                      "--get-duration")
+       (lambda (_ id-duration-str)
+         (let* ((id-duration (s-split "\n" id-duration-str))
+                (id (car id-duration))
+                (url (concat "https://www.youtube.com/watch?v=" id))
+                (duration (cadr id-duration)))
+           (setf (vuiet-track-duration track) duration)
+           (vuiet--add-id-track id track)
+           (mpv-run-command "loadfile" url "append-play")))))))
 
 (defun vuiet--play (generator)
   (if (mpv-live-p)
@@ -697,8 +689,8 @@ and append it to the mpv playlist."
                (let* ((id (vuiet--playing-track-youtube-id))
                       (track (vuiet--get-track-from-id id)))
                  ;;(message (format "File loaded, id: %s, track: %s" id track))
-                 (vuiet--set-playing-track track (mpv-get-duration))
-                 (vuiet-update-mode-line)
+                 (vuiet--playing-track-set track)
+                 (vuiet-update-mode-line 0)
                  (mpv-set-property "pause" "no")
                  (when vuiet-scrobble-enabled
                    (run-at-time vuiet-scrobble-timeout nil
@@ -706,7 +698,7 @@ and append it to the mpv playlist."
 
   (vuiet--generator-current-set generator)
   (vuiet--mpv-append-track      generator))
- 
+
 ;;;###autoload
 (cl-defun vuiet-play (songs &key (random nil))
   "Play everyting in the SONGS list, randomly or sequentially.
