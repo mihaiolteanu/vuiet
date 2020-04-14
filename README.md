@@ -113,17 +113,18 @@ option). You should have both of them installed.
 
 ## Playlists
 
+**vuiet-play** *songs (random nil)*
+
+    Play everyting in the SONGS list, randomly or sequentially.
+    SONGS is a list of type ((artist1 song1) (artist2 song2) ...).
+
 **vuiet-play-artist** *artist random*
 
-    Play the ARTIST top tracks.
-    If RANDOM is t, play the tracks at random, indefinitely.
-    The number of tracks is equal to VUIET-ARTIST-TRACKS-LIMIT.
+    Play the ARTIST top tracks, RANDOM or sequentially.
 
 **vuiet-play-playing-artist** *random*
 
     Play the currently playing artist's top tracks.
-    If RANDOM is t, play the tracks at random, indefinitely.
-    The number of tracks is equal to VUIET-ARTIST-TRACKS-LIMIT.
 
 **vuiet-play-playing-track-album**
 
@@ -156,26 +157,15 @@ option). You should have both of them installed.
 **vuiet-play-tag-similar** *tags*
 
     Play tracks from artists similar to TAGS.
-
-    If called directly, TAGS is a list of strings of the form '(tag1
-    tag2 etc.)
-
+    TAGS is a list of strings of the form '(tag1 tag2 etc.)
     If called interactively, multiple tags can be provided in the
     minibuffer if they are sepparated by commas.
-
-    Random tracks from random artists that have tags equal to one of
-    the TAGS are played.  The number of artists with the given tag
-    taken into account is equal to VUIET-TAG-ARTISTS-LIMIT while the
-    number of tracks is equal to VUIET-ARTIST-TRACKS-LIMIT.
     
 **vuiet-play-playing-tags-similar**
 
     Play tracks from artists with similar tags as the current tags.
-    Random tracks from random artists that have tags equal to one of
-    the tags of the currently playing artist are played.
-    The number of artists with the given tag taken into account is
-    equal to VUIET-TAG-ARTISTS-LIMIT while the number of tracks is
-    equal to VUIET-ARTIST-TRACKS-LIMIT.
+    Play tracks from random artists that have tags equal to one of
+    the tags of the currently playing artist.
 
 **vuiet-play-track** *artist name*
 
@@ -187,9 +177,7 @@ option). You should have both of them installed.
 
     Search TRACK and play the selected item.
     Similar to `vuiet-play-track', but search for TRACK on last.fm
-    first and then let the user select one of the results.  The
-    selected item is what is played by vuiet.  Useful if you don't
-    know the exact name and/or artist of the song.
+    first and then let the user select one of the results.
 
 **vuiet-play-track-by-lyrics** *lyrics*
 
@@ -221,25 +209,8 @@ option). You should have both of them installed.
 **vuiet-play-loved-tracks-similar**
 
     Play tracks based on artists similar to loved tracks artists.
-    Random tracks from random artists similar to a random artist from
-    the list of user loved tracks are played.
-    The user loved tracks list is the one associated with the
-    username given in the setup of the lastfm.el package.
-    The number of similar artists taken into account is equal to
-    VUIET-ARTIST-SIMILAR-LIMIT and the number of tracks is equal to
-    VUIET-ARTIST-TRACKS-LIMIT.
-    
-**vuiet-pick-album** *artist*
-
-    Display an album from ARTIST and optionally play it.
-    The album is displayed in a dedicated buffer.  See
-    `vuiet-album-info' for details and active keybindings inside this
-    buffer.
-
-**vuiet-play** *songs (random nil)*
-
-    Play everyting in the SONGS list, randomly or sequentially.
-    SONGS is a list of type ((artist1 song1) (artist2 song2) ...).
+    Play tracks from random artists similar to a random artist from
+    the list of user loved tracks.
 
 ## Music Browser
 
@@ -255,10 +226,7 @@ option). You should have both of them installed.
 
     Search ARTIST and display info about the selected item.
     Similar to `vuiet-artist-info', but search for ARTIST on last.fm
-    first and then let the user select one artist from the resulting
-    list of artists.  Vuiet then displays the info about the user
-    selected artist.  Useful if you don't know the exact name of the
-    artist.
+    first and then display the info about it.
 
 **vuiet-tag-info** *tag*
 
@@ -404,7 +372,7 @@ option). You should have both of them installed.
     When considering the top tracks for a given artist, take as many
     into consideration as this limit.  A lower value might mean
     tracks from this artist that you already know and love.  A higher
-    value increases the changes you'll discover something totally new
+    value increases the chances you'll discover something totally new
     but it also increases the chances that you'll get wrongly
     scrobbled songs and youtube will find something totally unrelated
     as a result.

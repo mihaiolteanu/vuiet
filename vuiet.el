@@ -69,7 +69,7 @@ increases the chances you'll discover something totally new."
 When considering the top tracks for a given artist, take as many
 into consideration as this limit.  A lower value might mean
 tracks from this artist that you already know and love.  A higher
-value increases the changes you'll discover something totally new
+value increases the chances you'll discover something totally new
 but it also increases the chances that you'll get wrongly
 scrobbled songs and youtube will find something totally unrelated
 as a result."
@@ -238,10 +238,7 @@ l   visit the artist's lastfm page."
 (defun vuiet-artist-info-search (artist)
   "Search ARTIST and display info about the selected item.
 Similar to `vuiet-artist-info', but search for ARTIST on last.fm
-first and then let the user select one artist from the resulting
-list of artists.  Vuiet then displays the info about the user
-selected artist.  Useful if you don't know the exact name of the
-artist."
+first and then display the info about it."
   (interactive "sArtist: ")
   (ivy-read "Info for artist: "
             (mapcar #'car (lastfm-artist-search artist))
@@ -708,9 +705,7 @@ SONGS is a list of type ((artist1 song1) (artist2 song2) ...)."
 
 ;;;###autoload
 (defun vuiet-play-artist (&optional artist random)
-  "Play the ARTIST top tracks.
-If RANDOM is t, play the tracks at random, indefinitely.
-The number of tracks is equal to VUIET-ARTIST-TRACKS-LIMIT."
+  "Play the ARTIST top tracks, RANDOM or sequentially."
   (interactive)
   (vuiet--artist-from-minibuffer-if-nil artist)
   (unless random
@@ -722,9 +717,7 @@ The number of tracks is equal to VUIET-ARTIST-TRACKS-LIMIT."
 
 ;;;###autoload
 (defun vuiet-play-playing-artist (random)
-  "Play the currently playing artist's top tracks.
-If RANDOM is t, play the tracks at random, indefinitely.
-The number of tracks is equal to VUIET-ARTIST-TRACKS-LIMIT."
+  "Play the currently playing artist's top tracks."
   (interactive (list (y-or-n-p "Play random? ")))
   (when (vuiet--playing-track)
     (vuiet-play-artist (vuiet-playing-artist)
@@ -820,17 +813,9 @@ the list of TAGS."
 ;;;###autoload
 (defun vuiet-play-tag-similar (tags)
   "Play tracks from artists similar to TAGS.
-
-If called directly, TAGS is a list of strings of the form '(tag1
-tag2 etc.)
-
+TAGS is a list of strings of the form '(tag1 tag2 etc.)
 If called interactively, multiple tags can be provided in the
-minibuffer if they are sepparated by commas.
-
-Random tracks from random artists that have tags equal to one of
-the TAGS are played.  The number of artists with the given tag
-taken into account is equal to VUIET-TAG-ARTISTS-LIMIT while the
-number of tracks is equal to VUIET-ARTIST-TRACKS-LIMIT."
+minibuffer if they are sepparated by commas."
   (interactive "sTag(s): ")
   (vuiet--play
    (vuiet--tags-similar-tracks
@@ -841,11 +826,8 @@ number of tracks is equal to VUIET-ARTIST-TRACKS-LIMIT."
 
 (defun vuiet-play-playing-tags-similar ()
   "Play tracks from artists with similar tags as the current tags.
-Random tracks from random artists that have tags equal to one of
-the tags of the currently playing artist are played.
-The number of artists with the given tag taken into account is
-equal to VUIET-TAG-ARTISTS-LIMIT while the number of tracks is
-equal to VUIET-ARTIST-TRACKS-LIMIT."
+Play tracks from random artists that have tags equal to one of
+the tags of the currently playing artist."
   (interactive)
   (vuiet--play
    (vuiet--tags-similar-tracks
@@ -869,9 +851,7 @@ ARTIST's top songs, where ARTIST is given in the minibuffer."
 (defun vuiet-play-track-search (track)
   "Search TRACK and play the selected item.
 Similar to `vuiet-play-track', but search for TRACK on last.fm
-first and then let the user select one of the results.  The
-selected item is what is played by vuiet.  Useful if you don't
-know the exact name and/or artist of the song."
+first and then let the user select one of the results."
   (interactive "sTrack: ")
   (vuiet--ivy-play-song (lastfm-track-search track)))
 
@@ -951,13 +931,8 @@ tracks list."
 ;;;###autoload
 (defun vuiet-play-loved-tracks-similar ()
   "Play tracks based on artists similar to loved tracks artists.
-Random tracks from random artists similar to a random artist from
-the list of user loved tracks are played.
-The user loved tracks list is the one associated with the
-username given in the setup of the lastfm.el package.
-The number of similar artists taken into account is equal to
-VUIET-ARTIST-SIMILAR-LIMIT and the number of tracks is equal to
-VUIET-ARTIST-TRACKS-LIMIT."
+Play tracks from random artists similar to a random artist from
+the list of user loved tracks."
   (interactive)
   (vuiet--play (vuiet--loved-tracks-similar-tracks)))
 
