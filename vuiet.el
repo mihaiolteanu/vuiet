@@ -446,9 +446,10 @@ inside this buffer."
 (defun vuiet-stop ()
   "Stop playing and clear the mode line."
   (interactive)
-  (setf vuiet--playing-track nil
-        mpv-on-exit-hook nil)
+  (vuiet--playing-track-set nil)
+  (setf mpv-on-exit-hook nil)
   (mpv-kill)
+  (vuiet--playlists-clear-all)
   (vuiet--reset-update-mode-line-timer)
   (setq-default mode-line-misc-info nil))
 
@@ -474,7 +475,20 @@ inside this buffer."
       (mpv-run-command "playlist-next")
     (error "No track available; Try again")))
 
+(defun vuiet-peek-next ()
+  "Display the next track in the mode-line for a few seconds."
+  (interactive)
+  (let ((track (vuiet--track-from-youtube-url
+                (cadr (vuiet--mpv-playlist-remaining-urls)))))
+    (setq-default mode-line-misc-info
+     (list (format "%s - %s (%s) "
+                   (vuiet-track-artist   track)
+                   (vuiet-track-name     track)
+                   (vuiet-track-duration track))))
+    (run-at-time 3 nil #'vuiet-update-mode-line)))
+
 (defun vuiet-previous ()
+  "Replay the previous track."
   (interactive)
   (condition-case nil
       (mpv-run-command "playlist-prev")
@@ -599,7 +613,7 @@ If no more objects available, do a cleanup and return nil."
     (iter-end-of-sequence
      (awhen (vuiet--playlists-remove)
        (vuiet--generator-current-set (vuiet--playlist-generator it))
-       (vuiet--mpv-append-urls (vuiet--playlist-urls it)))
+       (vuiet--mpv-playlist-append-urls (vuiet--playlist-urls it)))
      nil)))
 
 ;;;:;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -627,9 +641,6 @@ will yield each of the (length songs) elements, sequentially."
   (defun vuiet--get-track-from-id (id)
     (gethash id id-tracks)))
 
-(defun vuiet--playing-track-youtube-id ()
-  (cadr (s-split "=" (mpv-get-property "filename"))))
-
 (cl-defstruct vuiet--playlist
   urls generator)
 
@@ -647,8 +658,10 @@ will yield each of the (length songs) elements, sequentially."
       (error
        ;; No more playlists available
        nil)))
-  (defun vuiet--return-playlists ()
-    playlists))
+  
+  (defun vuiet--playlists-clear-all ()
+    (while (not (ring-empty-p playlists))
+      (ring-remove playlists))))
 
 (let (generator)
   (defun vuiet--generator-curent ()
@@ -657,30 +670,46 @@ will yield each of the (length songs) elements, sequentially."
   (defun vuiet--generator-current-set (gen)
     (setf generator gen)))
 
-(defun vuiet--mpv-remaining-urls ()
-  (let ((pos (mpv-get-property "playlist-pos-1"))
+(defun vuiet--mpv-playlist-remaining-urls ()
+  "Return the remaining mpv urls, including this one."
+  (let ((pos   (mpv-get-property "playlist-pos"))
         (count (mpv-get-property "playlist-count")))
     (cl-loop for c from pos to (- count 1)
              collect (mpv-get-property
                       (format "playlist/%s/filename" c)))))
 
-(defun vuiet--mpv-append-urls (urls)
+(defun vuiet--mpv-playlist-append-urls (urls)
   (mapcar (lambda (url)
             (mpv-run-command "loadfile" url "append-play"))
           urls))
 
-(defun vuiet--mpv-clear-urls ()
+(defun vuiet--mpv-playlist-clear ()
   "Remove all the urls from the mpv playlist."
   (mpv-run-command "playlist-clear")
   (mpv-run-command "playlist-remove" 0))
 
-(defun vuiet--mpv-buffered-urls ()
+(defun vuiet--mpv-playlist-remaining-urls-count ()
   (- (mpv-get-property "playlist-count")
      (mpv-get-property "playlist-pos-1")))
 
+(defun vuiet--track-from-youtube-url (url)
+  "Return the track object associated with the youtube id."
+  (vuiet--get-track-from-id
+   (cadr (s-split "=" url))))
+
+(defun vuiet--mpv-playing-track ()
+  "Return the currently mpv playing track."
+  (vuiet--track-from-youtube-url
+   (mpv-get-property "filename")))
+
 (defun vuiet--mpv-append-track (generator)
-  "Get the next track from the GENERATOR, find its youtube url
-and append it to the mpv playlist."
+  "Append the next track url from GENERATOR to mpv.
+If the GENERATOR is not empty, get the next track from it, find
+it's youtube url and append it to the currently running mpv
+instance playlist.  When the url is sometimes played, in the
+future, I want to also have a means to recover the track name
+from it, thus, I am saving the track for the given youtube url in
+a hash table."
   (let ((track (vuiet--next-track generator)))
     (when track
       (set-process-filter
@@ -695,15 +724,16 @@ and append it to the mpv playlist."
                 (duration (cadr id-duration)))
            (setf (vuiet-track-duration track) duration)
            (vuiet--add-id-track id track)
-           (mpv-run-command "loadfile" url "append-play")))))))
+           (vuiet--mpv-playlist-append-urls (list url))))))))
 
 (defun vuiet--play (generator)
   (if (mpv-live-p)
-      (let ((remaining-urls (vuiet--mpv-remaining-urls)))
-        (vuiet--mpv-clear-urls)
-        (when remaining-urls
+      (let ((mpv-urls (vuiet--mpv-playlist-remaining-urls)))
+        (vuiet--mpv-playlist-clear)
+        ;; Do not store playlists made of a single track.
+        (when (and mpv-urls (> (length mpv-urls) 1))
           (vuiet--playlists-store
-           (vuiet--new-playlist remaining-urls generator))))
+           (vuiet--new-playlist mpv-urls generator))))
     ;; Vuiet startup
     (mpv-start "--no-video"
                "--idle=yes"
@@ -715,11 +745,10 @@ and append it to the mpv playlist."
               ("playback-restart"            
                (mpv-set-property "pause" "no"))
               ("start-file"
-               (when (< (vuiet--mpv-buffered-urls) 1)
+               (when (< (vuiet--mpv-playlist-remaining-urls-count) 1)
                  (vuiet--mpv-append-track (vuiet--generator-curent))))
               ("file-loaded"
-               (let* ((id (vuiet--playing-track-youtube-id))
-                      (track (vuiet--get-track-from-id id)))
+               (let* ((track (vuiet--mpv-playing-track)))
                  ;;(message (format "File loaded, id: %s, track: %s" id track))
                  (vuiet--playing-track-set track)
                  (vuiet-update-mode-line 0)
@@ -952,16 +981,16 @@ Return a random track from a random artist from the user's loved
 tracks list."
   (while t
     (let* ((artist  (car (seq-random-elt
-                        (lastfm-user-get-loved-tracks
-                         :limit vuiet-loved-tracks-limit))))
+                          (lastfm-user-get-loved-tracks
+                           :limit vuiet-loved-tracks-limit))))
            (similar (car (seq-random-elt
-                        (lastfm-artist-get-similar
-                         artist
-                         :limit vuiet-artist-similar-limit))))
+                          (lastfm-artist-get-similar
+                           artist
+                           :limit vuiet-artist-similar-limit))))
            (track   (cadr (seq-random-elt
-                        (lastfm-artist-get-top-tracks
-                         similar
-                         :limit vuiet-artist-tracks-limit)))))
+                           (lastfm-artist-get-top-tracks
+                            similar
+                            :limit vuiet-artist-tracks-limit)))))
       (iter-yield (vuiet--new-track similar track)))))
 
 ;;;###autoload
