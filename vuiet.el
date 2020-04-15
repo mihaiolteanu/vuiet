@@ -478,14 +478,16 @@ inside this buffer."
 (defun vuiet-peek-next ()
   "Display the next track in the mode-line for a few seconds."
   (interactive)
-  (let ((track (vuiet--track-from-youtube-url
-                (cadr (vuiet--mpv-playlist-remaining-urls)))))
-    (setq-default mode-line-misc-info
-     (list (format "%s - %s (%s) "
-                   (vuiet-track-artist   track)
-                   (vuiet-track-name     track)
-                   (vuiet-track-duration track))))
-    (run-at-time 3 nil #'vuiet-update-mode-line)))
+  (let ((urls (vuiet--mpv-playlist-remaining-urls)))
+    (when (> (length urls) 1)
+      (let ((track (vuiet--track-from-youtube-url
+                    (cadr (vuiet--mpv-playlist-remaining-urls)))))
+        (setq-default mode-line-misc-info
+         (list (format "%s - %s (%s) "
+                       (vuiet-track-artist   track)
+                       (vuiet-track-name     track)
+                       (vuiet-track-duration track))))
+        (run-at-time 3 nil #'vuiet-update-mode-line)))))
 
 (defun vuiet-previous ()
   "Replay the previous track."
@@ -726,15 +728,21 @@ a hash table."
            (vuiet--add-id-track id track)
            (vuiet--mpv-playlist-append-urls (list url))))))))
 
-(defun vuiet--play (generator)
+(cl-defun vuiet--play (generator &key (maybe-keep-old-playlist t))
+  "Start mpv and play the tracks from the GENERATOR."
   (if (mpv-live-p)
-      (let ((mpv-urls (vuiet--mpv-playlist-remaining-urls)))
-        (vuiet--mpv-playlist-clear)
-        ;; Do not store playlists made of a single track.
-        (when (and mpv-urls (> (length mpv-urls) 1))
-          (vuiet--playlists-store
-           (vuiet--new-playlist mpv-urls generator))))
-    ;; Vuiet startup
+      ;; Storing playlists.
+      (progn
+        (when maybe-keep-old-playlist
+          (let ((urls (vuiet--mpv-playlist-remaining-urls)))
+            (when (and urls (> (length urls) 1))
+              ;; Do not store the old running playlist if it has only a single
+              ;; track.
+              (vuiet--playlists-store
+               (vuiet--new-playlist urls generator)))))
+        (vuiet--mpv-playlist-clear))
+    
+    ;; Vuiet startup.
     (mpv-start "--no-video"
                "--idle=yes"
                "--keep-open=yes")
@@ -756,7 +764,7 @@ a hash table."
                  (when vuiet-scrobble-enabled
                    (run-at-time vuiet-scrobble-timeout nil
                                 #'vuiet--scrobble-track track))))))))
-
+  ;; Setup the playlist.
   (vuiet--generator-current-set generator)
   (vuiet--mpv-append-track      generator)
   (vuiet--set-update-mode-line-timer))
@@ -766,7 +774,13 @@ a hash table."
   "Play everyting in the SONGS list, randomly or sequentially.
 SONGS is a list of type ((artist1 song1) (artist2 song2) ...)."
   (vuiet--play
-   (vuiet--make-generator songs random)))
+   (vuiet--make-generator songs random)
+   :maybe-keep-old-playlist
+   (if (> (length songs) 1)
+       nil
+     ;; Allow trying and exploring a new, single track, without destroying
+     ;; the already running playlist.
+     t)))
 
 ;;;###autoload
 (defun vuiet-play-artist (&optional artist random)
