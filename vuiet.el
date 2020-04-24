@@ -713,9 +713,17 @@ am saving the track for the given youtube url in a hash table."
                              #'vuiet--scrobble-track track))))))))
     ;; If the player was already started, change the generator and clear the
     ;; mpv playlist but leave the hooks and everything else in place.
-    (setf gen generator)                  ;needed by the hook closure
-    (mpv-set-property "pause" "yes")      ;not an instant stop, otherwise
-    (vuiet--mpv-add-track generator nil)  ;new playlist, clear the previous one
+    (setf gen generator)
+    (if current-prefix-arg
+        ;; Calling any play command with prefix arg, postpones the changing of
+        ;; playlists until the current track ends.
+        (progn          
+          (setf current-prefix-arg nil)
+          ;; Keep only the currently playing track in the playlist.
+          (mpv-run-command "playlist-clear")
+          (vuiet--mpv-add-track generator t))                        
+      (mpv-set-property "pause" "yes")
+      (vuiet--mpv-add-track generator nil))
     (vuiet--set-update-mode-line-timer)))
 
 ;;;###autoload
