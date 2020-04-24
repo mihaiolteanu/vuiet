@@ -281,6 +281,14 @@ option). You should have both of them installed.
 
     Skip the currently playing track and play the next.
     
+**vuiet-peek-next**
+
+    Display the next track in the mode-line for a few seconds.
+    
+**vuiet-previous**
+
+    Replay the previous track.
+    
 **vuiet-replay**
 
     Play the currently playing track from the beginning.
@@ -357,6 +365,20 @@ option). You should have both of them installed.
     Enable/disable last.fm scrobbling.
     Decide if the currently playing track should appear in your list
     of recently played tracks on last.fm.
+
+**vuiet-update-mode-line-automatically** t
+
+    Enable/disable the automatic update of the mode-line.
+    If enabled, the mode-line is automatically updated after
+    `vuiet-update-mode-line-interval' seconds. More specifically,
+    `vuiet-update-mode-line' is called periodically while a track is
+    playing to update it's current playback position.
+
+**vuiet-update-mode-line-interval** 10
+
+    Timeout, in seconds, after which to update the mode-line.
+    See the `vuiet-update-mode-line-automatically' custom variable
+    for details.
 
 **vuiet-artist-similar-limit** *15*
 
