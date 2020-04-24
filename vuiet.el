@@ -402,8 +402,9 @@ inside this buffer."
                       #'vuiet-update-mode-line)))))
 
   (defun vuiet--reset-update-mode-line-timer ()
-    (cancel-timer timer)
-    (setf timer nil)))
+    (when timer
+      (cancel-timer timer)
+      (setf timer nil))))
 
 (let (playing-track)
   (defun vuiet--playing-track-set (track)
