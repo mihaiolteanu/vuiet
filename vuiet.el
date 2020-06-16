@@ -734,24 +734,21 @@ SONGS is a list of type ((artist1 song1) (artist2 song2) ...)."
    (vuiet--make-generator songs random)))
 
 ;;;###autoload
-(defun vuiet-play-artist (&optional artist random)
+(defun vuiet-play-artist (&optional artist)
   "Play the ARTIST top tracks, RANDOM or sequentially."
   (interactive)
   (vuiet--artist-from-minibuffer-if-nil artist)
-  (unless random
-    (setf random (y-or-n-p (format "%s: Play random? " artist))))
   (vuiet-play (lastfm-artist-get-top-tracks
                artist
                :limit vuiet-artist-tracks-limit)
-              :random random))
+              :random (y-or-n-p (format "%s: Play random? " artist))))
 
 ;;;###autoload
-(defun vuiet-play-playing-artist (random)
+(defun vuiet-play-playing-artist ()
   "Play the currently playing artist's top tracks."
-  (interactive (list (y-or-n-p "Play random? ")))
+  (interactive)
   (when (vuiet--playing-track)
-    (vuiet-play-artist (vuiet-playing-artist)
-                       random)))
+    (vuiet-play-artist (vuiet-playing-artist))))
 
 (defun vuiet-play-playing-track-album ()
   "Play the full album of the currently playing track."
