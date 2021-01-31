@@ -92,6 +92,11 @@ as a result."
   :type '(number :tag "count")
   :group 'vuiet)
 
+(defcustom vuiet-artist-albums-limit 15
+  "Number of album for the given artist."
+  :type '(number :tag "count")
+  :group 'vuiet)
+
 (defcustom vuiet-tag-artists-limit 15
   "Number of artists for the given tag.
 When considering the top artists for a given tag, take as many
@@ -218,6 +223,9 @@ l   visit the artist's lastfm page."
            (songs (lastfm-artist-get-top-tracks
                    artist
                    :limit vuiet-artist-tracks-limit))
+	   (albums (lastfm-artist-get-top-albums
+		    artist
+		    :limit vuiet-artist-albums-limit))
            (bio-summary (car artist-info))
            ;; The subseq indices are based on the standard lastfm.el response
            ;; for artist.info
@@ -244,6 +252,13 @@ l   visit the artist's lastfm page."
                do (insert
                    (format "%2s. [[elisp:(vuiet-play '((\"%s\" \"%s\")))][%s]]\n"
                            i artist (cadr song) (cadr song))))
+
+      (insert "\n\n* Top Albums: \n")
+      (cl-loop for i from 1
+               for album in albums
+               do (insert
+                   (format "%2s. [[elisp:(vuiet-play-album \"%s\" \"%s\")][%s]]\n"
+                           i artist (car album) (car album))))
 
       (vuiet--local-set-keys
         ("p" . (vuiet-play songs))
