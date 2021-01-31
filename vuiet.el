@@ -222,7 +222,7 @@ l   visit the artist's lastfm page."
            ;; The subseq indices are based on the standard lastfm.el response
            ;; for artist.info
            (similar-artists (cl-subseq artist-info 3 7))
-           (tags (cl-subseq artist-info 8 12)))
+           (tags (cl-subseq artist-info 8)))
       (insert (format "* %s\n\n %s"
                       artist
                       (s-word-wrap 75 (replace-regexp-in-string
