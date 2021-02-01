@@ -515,6 +515,20 @@ It only considers tracks from the current playlist."
   (mpv-seek-forward seconds)
   (vuiet-update-mode-line))
 
+(defun vuiet-seek-backward-rate (arg)
+  "Seek backward ARG% of the track.  ARG defaults to 10%."
+  (interactive "p")
+  (mpv-seek-backward (round (* (if current-prefix-arg arg 10)
+			       (/ (mpv-get-duration) 100))))
+  (vuiet-update-mode-line))
+
+(defun vuiet-seek-forward-rate (arg)
+  "Seek forward ARG% of the track.  ARG defaults to 10%."
+  (interactive "p")
+  (mpv-seek-forward (round (* (if current-prefix-arg arg 10)
+			      (/ (mpv-get-duration) 100))))
+  (vuiet-update-mode-line))
+
 (defun vuiet-play-pause ()
   "Toggle the play/pause status."
   (interactive)
