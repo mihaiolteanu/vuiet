@@ -473,7 +473,7 @@ inside this buffer."
   (interactive)
   (condition-case nil
       (mpv-run-command "playlist-next")
-    (error "No track available; Try again")))
+    (error (display-message-or-buffer "No track available; Try again"))))
 
 (defun vuiet-peek-next ()
   "Display the next track in the mode-line for a few seconds."
@@ -495,7 +495,7 @@ It only considers tracks from the current playlist."
   (interactive)
   (condition-case nil
       (mpv-run-command "playlist-prev")
-    (error "This is the first track")))
+    (error (display-message-or-buffer "This is the first track"))))
 
 (defun vuiet-replay ()
   "Play the currently playing track from the beginning."
