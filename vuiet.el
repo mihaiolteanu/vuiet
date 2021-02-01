@@ -560,7 +560,7 @@ It only considers tracks from the current playlist."
   (vuiet-play-pause)
   (when (vuiet-playing-artist)
     (browse-url
-     (concat "https://www.youtube.com/watch?v="
+     (concat "https://www.youtube.com/"
              (mpv-get-property "filename")
              "&t=" (int-to-string
                     (round (mpv-get-playback-position)))))))
