@@ -222,7 +222,7 @@ l   visit the artist's lastfm page."
            ;; The subseq indices are based on the standard lastfm.el response
            ;; for artist.info
            (similar-artists (cl-subseq artist-info 3 7))
-           (tags (cl-subseq artist-info 8 12)))
+           (tags (cl-subseq artist-info 8)))
       (insert (format "* %s\n\n %s"
                       artist
                       (s-word-wrap 75 (replace-regexp-in-string
@@ -473,7 +473,7 @@ inside this buffer."
   (interactive)
   (condition-case nil
       (mpv-run-command "playlist-next")
-    (error "No track available; Try again")))
+    (error (display-message-or-buffer "No track available; Try again"))))
 
 (defun vuiet-peek-next ()
   "Display the next track in the mode-line for a few seconds."
@@ -495,7 +495,7 @@ It only considers tracks from the current playlist."
   (interactive)
   (condition-case nil
       (mpv-run-command "playlist-prev")
-    (error "This is the first track")))
+    (error (display-message-or-buffer "This is the first track"))))
 
 (defun vuiet-replay ()
   "Play the currently playing track from the beginning."
@@ -513,6 +513,20 @@ It only considers tracks from the current playlist."
   "Seek forward the given number of SECONDS."
   (interactive)
   (mpv-seek-forward seconds)
+  (vuiet-update-mode-line))
+
+(defun vuiet-seek-backward-rate (arg)
+  "Seek backward ARG% of the track.  ARG defaults to 10%."
+  (interactive "p")
+  (mpv-seek-backward (round (* (if current-prefix-arg arg 10)
+			       (/ (mpv-get-duration) 100))))
+  (vuiet-update-mode-line))
+
+(defun vuiet-seek-forward-rate (arg)
+  "Seek forward ARG% of the track.  ARG defaults to 10%."
+  (interactive "p")
+  (mpv-seek-forward (round (* (if current-prefix-arg arg 10)
+			      (/ (mpv-get-duration) 100))))
   (vuiet-update-mode-line))
 
 (defun vuiet-play-pause ()
