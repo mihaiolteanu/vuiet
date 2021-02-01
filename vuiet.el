@@ -568,16 +568,28 @@ It only considers tracks from the current playlist."
     (browse-url
      (format "https://www.youtube.com/results?search_query=%s" it))))
 
+(defun vuiet--youtube-link-at-position ()
+"Return youtube link of the current track at the playback position."
+  (concat "https://www.youtube.com/"
+  	  (mpv-get-property "filename")
+  	  "&t=" (int-to-string
+		 (round (mpv-get-playback-position)))))
+
 (defun vuiet-playing-track-continue-on-youtube ()
   "Pause vuiet and continue playing on youtube."
   (interactive)
   (vuiet-play-pause)
   (when (vuiet-playing-artist)
     (browse-url
-     (concat "https://www.youtube.com/"
-             (mpv-get-property "filename")
-             "&t=" (int-to-string
-                    (round (mpv-get-playback-position)))))))
+     (vuiet--youtube-link-at-position))))
+
+(defun vuiet-playing-track-continue-with-mpv ()
+  "Pause vuiet and continue playing with mpv as a new process."
+  (interactive)
+  (vuiet-play-pause)
+  (when (vuiet-playing-artist)
+    (start-process "vuiet" nil "mpv"
+		   (vuiet--youtube-link-at-position))))
 
 (defun vuiet-artist-lastfm-page (artist)
   "Visit the ARTIST lastfm page."
