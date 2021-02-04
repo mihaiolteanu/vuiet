@@ -507,13 +507,15 @@ It only considers tracks from the current playlist."
 (defun vuiet-seek-backward (arg)
   "Seek backward the given number of ARG.  ARG defaults to 5 seconds."
   (interactive "p")
-  (mpv-seek-backward (if current-prefix-arg arg 5))
+  (or arg (setq arg 5))
+  (mpv-seek-backward arg)
   (vuiet-update-mode-line))
 
 (defun vuiet-seek-forward (arg)
   "Seek forward the given number of ARG.  ARG defaults to 5 seconds."
   (interactive "p")
-  (mpv-seek-forward (if current-prefix-arg arg 5))
+  (or arg (setq arg 5))
+  (mpv-seek-forward arg)
   (vuiet-update-mode-line))
 
 (defun vuiet-seek-backward-rate (arg)
