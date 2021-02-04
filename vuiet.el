@@ -363,7 +363,7 @@ l   save lyrics for this album."
       (insert (format "* %s - %s \n\n" artist album))
       (cl-loop for i from 1
                for entry in songs
-               for song = (cadr entry)
+	       for song = (s-replace-all '(("[" . "(") ("]" . ")")) (cadr entry))
                for duration = (format-seconds
                                "%m:%02s" (string-to-number (caddr entry)))
                do (insert
