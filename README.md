@@ -317,13 +317,13 @@ option). You should have both of them installed.
 
     Get the music player volume, between 0% and 100%.
     
-**vuiet-player-volume-inc**
+**vuiet-player-volume-inc** *(arg)*
 
-    Increase the music player volume by STEP percent.
+    Increase the music player volume by ARG percent.  ARG defaults to 10%.
 
-**vuiet-player-volume-dec**
+**vuiet-player-volume-dec** *(arg)*
     
-    Decrease the music player volume by STEP percent.
+    Decrease the music player volume by ARG percent.  ARG defaults to 10%.
     
 **vuiet-playing-artist-info**
 
