@@ -293,13 +293,21 @@ option). You should have both of them installed.
 
     Play the currently playing track from the beginning.
     
-**vuiet-seek-backward** *(seconds 5)*
+**vuiet-seek-backward** *(arg)*
 
-    Seek backward the given number of SECONDS.
+    Seek backward the given number of ARG.  ARG defaults to 5 seconds.
 
-**vuiet-seek-forward** *(seconds 5)*
+**vuiet-seek-forward** *(arg)*
 
-    Seek forward the given number of SECONDS.
+    Seek forward the given number of ARG.  ARG defaults to 5 seconds.
+
+**vuiet-seek-backward-rate** *(arg)*
+
+    Seek backward ARG% of the track.  ARG defaults to 10%.
+
+**vuiet-seek-forward-rate** *(arg)*
+
+    Seek forward ARG% of the track.  ARG defaults to 10%.
 
 **vuiet-play-pause**
 
@@ -328,6 +336,10 @@ option). You should have both of them installed.
 **vuiet-playing-track-continue-on-youtube**
 
     Pause vuiet and continue playing on youtube.
+
+**vuiet-playing-track-continue-with-mpv**
+
+    Pause vuiet and continue playing with mpv as a new process.
     
 **vuiet-artist-lastfm-page** *artist*
     

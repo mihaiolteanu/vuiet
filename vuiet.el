@@ -240,10 +240,11 @@ l   visit the artist's lastfm page."
       
       (insert "\n\n* Top Songs: \n")
       (cl-loop for i from 1
-               for song in songs
+               for track in songs
+	       as song = (s-replace-all '(("[" . "(") ("]" . ")")) (cadr track))
                do (insert
                    (format "%2s. [[elisp:(vuiet-play '((\"%s\" \"%s\")))][%s]]\n"
-                           i artist (cadr song) (cadr song))))
+                           i artist song song)))
 
       (vuiet--local-set-keys
         ("p" . (vuiet-play songs))
@@ -362,7 +363,7 @@ l   save lyrics for this album."
       (insert (format "* %s - %s \n\n" artist album))
       (cl-loop for i from 1
                for entry in songs
-               for song = (cadr entry)
+	       for song = (s-replace-all '(("[" . "(") ("]" . ")")) (cadr entry))
                for duration = (format-seconds
                                "%m:%02s" (string-to-number (caddr entry)))
                do (insert
@@ -503,16 +504,16 @@ It only considers tracks from the current playlist."
   (mpv-seek 1)
   (vuiet-update-mode-line))
 
-(cl-defun vuiet-seek-backward (&optional (seconds 5))
-  "Seek backward the given number of SECONDS."
-  (interactive)
-  (mpv-seek-backward seconds)
+(defun vuiet-seek-backward (arg)
+  "Seek backward the given number of ARG.  ARG defaults to 5 seconds."
+  (interactive "p")
+  (mpv-seek-backward (if current-prefix-arg arg 5))
   (vuiet-update-mode-line))
 
-(cl-defun vuiet-seek-forward (&optional (seconds 5))
-  "Seek forward the given number of SECONDS."
-  (interactive)
-  (mpv-seek-forward seconds)
+(defun vuiet-seek-forward (arg)
+  "Seek forward the given number of ARG.  ARG defaults to 5 seconds."
+  (interactive "p")
+  (mpv-seek-forward (if current-prefix-arg arg 5))
   (vuiet-update-mode-line))
 
 (defun vuiet-seek-backward-rate (arg)
