@@ -240,10 +240,11 @@ l   visit the artist's lastfm page."
       
       (insert "\n\n* Top Songs: \n")
       (cl-loop for i from 1
-               for song in songs
+               for track in songs
+	       as song = (s-replace-all '(("[" . "(") ("]" . ")")) (cadr track))
                do (insert
                    (format "%2s. [[elisp:(vuiet-play '((\"%s\" \"%s\")))][%s]]\n"
-                           i artist (cadr song) (cadr song))))
+                           i artist song song)))
 
       (vuiet--local-set-keys
         ("p" . (vuiet-play songs))
