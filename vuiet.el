@@ -504,32 +504,28 @@ It only considers tracks from the current playlist."
   (mpv-seek 1)
   (vuiet-update-mode-line))
 
-(defun vuiet-seek-backward (arg)
-  "Seek backward the given number of ARG.  ARG defaults to 5 seconds."
-  (interactive "p")
-  (or arg (setq arg 5))
-  (mpv-seek-backward arg)
+(defun vuiet-seek-backward (&optional arg)
+  "Seek backward ARG seconds.  ARG defaults to 5."
+  (interactive "P")
+  (mpv-seek-backward (or arg 5))
   (vuiet-update-mode-line))
 
-(defun vuiet-seek-forward (arg)
-  "Seek forward the given number of ARG.  ARG defaults to 5 seconds."
-  (interactive "p")
-  (or arg (setq arg 5))
-  (mpv-seek-forward arg)
+(defun vuiet-seek-forward (&optional arg)
+  "Seek forward ARG seconds.  ARG defaults to 5."
+  (interactive "P")
+  (mpv-seek-forward (or arg 5))
   (vuiet-update-mode-line))
 
-(defun vuiet-seek-backward-rate (arg)
-  "Seek backward ARG% of the track.  ARG defaults to 10%."
-  (interactive "p")
-  (or arg (setq arg 10))
-  (mpv-run-command "seek" (- arg) "relative-percent")
+(defun vuiet-seek-backward-rate (&optional arg)
+  "Seek backward ARG percents of the track.  ARG defaults to 10."
+  (interactive "P")
+  (mpv-run-command "seek" (- (or arg 10)) "relative-percent")
   (vuiet-update-mode-line))
 
-(defun vuiet-seek-forward-rate (arg)
-  "Seek forward ARG% of the track.  ARG defaults to 10%."
-  (interactive "p")
-  (or arg (setq arg 10))
-  (mpv-run-command "seek" arg "relative-percent")
+(defun vuiet-seek-forward-rate (&optional arg)
+  "Seek forward ARG percents of the track.  ARG defaults to 10."
+  (interactive "P")
+  (mpv-run-command "seek" (or arg 10) "relative-percent")
   (vuiet-update-mode-line))
 
 (defun vuiet-play-pause ()
@@ -542,21 +538,19 @@ It only considers tracks from the current playlist."
   "Get the music player volume, between 0% and 100%."
   (mpv-get-property "volume"))
 
-(defun vuiet-player-volume-inc (arg)
+(defun vuiet-player-volume-inc (&optional arg)
   "Increase the music player volume by ARG percent.  ARG defaults to 10."
-  (interactive "p")
-  (or arg (setq arg 10))
+  (interactive "P")
   (let* ((volume (vuiet-player-volume))
-	 (new-volume (+ volume arg)))
+	 (new-volume (+ volume (or arg 10))))
     (when (<= new-volume 100)
       (mpv-set-property "volume" new-volume))))
 
-(defun vuiet-player-volume-dec (arg)
+(defun vuiet-player-volume-dec (&optional arg)
   "Decrease the mpv player volume by ARG percent.  ARG defaults to 10."
-  (interactive "p")
-  (or arg (setq arg 10))
+  (interactive "P")
   (let* ((volume (vuiet-player-volume))
-	 (new-volume (- volume arg)))
+	 (new-volume (- volume (or arg 10))))
     (when (>= new-volume 0)
       (mpv-set-property "volume" new-volume))))
 
