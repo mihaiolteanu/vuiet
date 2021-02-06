@@ -647,7 +647,7 @@ If no more objects available, return nil."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (cl-deftype song () '(and (list-of string)
-			  (satisfies (lambda (l) (= (length l) 2)))))
+			  (satisfies (lambda (l) (>= (length l) 2)))))
 
 (cl-deftype playlist () '(list-of song))
 
