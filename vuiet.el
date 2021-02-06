@@ -288,6 +288,7 @@ first and then display the info about it."
 
 (defun vuiet--ivy-play-song (songs)
   "Choose a song from SONGS with ivy and play it."
+  (setq songs (vuiet--check-playlist songs))
   (cl-multiple-value-bind (artist-max-len song-max-len)
       (cl-loop for entry in songs
                maximize (length (car entry)) into artist
@@ -644,6 +645,28 @@ If no more objects available, return nil."
 ;;;:;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;                    Playlists
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(cl-deftype song () '(and (list-of string)
+			  (satisfies (lambda (l) (= (length l) 2)))))
+
+(cl-deftype playlist () '(list-of song))
+
+(defun vuiet--song-p (object)
+  "Return `t' if OBJECT is a song"
+  (cl-typep object 'song))
+
+(defun vuiet--playlist-p (object)
+  "Return `t' if OBJECT is a playlist"
+  (cl-typep object 'playlist))
+
+(defun vuiet--check-playlist (songs)
+  "Check whether SONGS is a playlist, and return it.
+If not, try to fix it or emit an error."
+  (pcase songs
+    ((pred vuiet--playlist-p) songs)
+    ((pred vuiet--song-p) (list songs))
+    (_ (error (display-message-or-buffer
+	       (format "Argument %s is not a playlist" songs))))))
 
 (iter-defun vuiet--make-generator (songs random)
   "Make a generator of VUIET-TRACK objects from the SONGS list.
