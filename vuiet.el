@@ -71,6 +71,20 @@ for details."
   :type '(number :tag "seconds")
   :group 'vuiet)
 
+(defcustom vuiet-mode-line-info-position 'mode-line
+  "Position at which vuiet mode-line info are displayed.
+
+- `header': set current track information at header line;
+- `frame-title': set current track information at frame title;
+- `mode-line': set current track information at mode line;
+- nil: do not display current track information, customize it yourself via
+ `vuiet-get-current-track-info'."
+  :type '(radio (const :tag "at header line" :value 'header)
+		(const :tag "at frame title" :value 'frame-title)
+		(const :tag "at mode line" :value 'mode-line)
+		(const :tag "disable" :value nil))
+  :group 'vuiet)
+
 (defcustom vuiet-artist-similar-limit 15
   "Number of artists similar to the given artist.
 When considering artists similar to a given artist, take as many
@@ -426,24 +440,38 @@ inside this buffer."
   (interactive)
   (setf vuiet-scrobble-enabled nil))
 
-(defun vuiet-update-mode-line (&optional position)
-  "Update the mode-line."
-  (interactive)
-  (let ((track (vuiet--playing-track)))
-    (when track
-      (setq-default mode-line-misc-info
-        (list (format "%s - %s [%s/%s] "
-                (vuiet-track-artist   track)
-                (vuiet-track-name     track)
-                (format-time-string "%M:%S"
-                 (or position
-                     ;; At startup, the running track may be set, by the
-                     ;; file might not be loaded yet.
-                     (condition-case nil
-                         (mpv-get-playback-position)
-                       (error 0))))
-                (vuiet-track-duration track))))))
-  (force-mode-line-update t))
+(let (vuiet-current-track-info)
+
+  (defun vuiet-get-current-track-info ()
+    vuiet-current-track-info)
+
+  (defun vuiet--mode-line-info (&optional position)
+    "Return current track information to display in mode-line."
+    (let ((track (vuiet--playing-track)))
+      (list (format "%s - %s [%s/%s] "
+                    (vuiet-track-artist   track)
+                    (vuiet-track-name     track)
+                    (format-time-string "%M:%S"
+  				      (or position
+  					  ;; At startup, the running track may be set, by the
+  					  ;; file might not be loaded yet.
+  					  (condition-case nil
+  					      (mpv-get-playback-position)
+  					    (error 0))))
+                    (vuiet-track-duration track)))))
+
+  (defun vuiet-update-mode-line (&optional position)
+    "Update the mode-line."
+    (interactive)
+    (let ((track (vuiet--playing-track)))
+      (when track
+        (setq vuiet-current-track-info (vuiet--mode-line-info position))
+        (pcase vuiet-mode-line-info-position
+  	('mode-line (setq-default mode-line-misc-info (vuiet-get-current-track-info)))
+  	('header (setq-default header-line-format '(:eval (vuiet-get-current-track-info))))
+  	('frame-title (setq-default frame-title-format '(:eval (vuiet-get-current-track-info)))))
+        (when vuiet-mode-line-info-position
+  	(force-mode-line-update t))))))
 
 (defun vuiet-stop ()
   "Stop playing and clear the mode line."
@@ -452,7 +480,10 @@ inside this buffer."
   (setf mpv-on-exit-hook nil)
   (mpv-kill)
   (vuiet--reset-update-mode-line-timer)
-  (setq-default mode-line-misc-info nil))
+  (pcase vuiet-mode-line-info-position
+    ('mode-line (setq-default mode-line-misc-info nil))
+    ('header (setq-default header-line-format nil))
+    ('frame-title (setq-default frame-title-format nil))))
 
 (defun vuiet-playing-artist ()
   "Return the currently playing artist."
@@ -479,15 +510,18 @@ inside this buffer."
 (defun vuiet-peek-next ()
   "Display the next track in the mode-line for a few seconds."
   (interactive)
-  (let ((urls (vuiet--mpv-playlist-remaining-urls)))
+  (let ((urls (vuiet--mpv-playlist-remaining-urls))
+	(next-track-info (list (format "%s - %s (%s) "
+				       (vuiet-track-artist   track)
+				       (vuiet-track-name     track)
+				       (vuiet-track-duration track)))))
     (when (> (length urls) 1)
       (let ((track (vuiet--track-from-youtube-url
                     (cadr (vuiet--mpv-playlist-remaining-urls)))))
-        (setq-default mode-line-misc-info
-         (list (format "%s - %s (%s) "
-                       (vuiet-track-artist   track)
-                       (vuiet-track-name     track)
-                       (vuiet-track-duration track))))
+	(pcase vuiet-mode-line-info-position
+	  ('mode-line (setq-default mode-line-misc-info next-track-info))
+	  ('header (setq-default header-line-format '(:eval next-track-info)))
+	  ('frame-title (setq-default frame-title-format '(:eval next-track-info))))
         (run-at-time 3 nil #'vuiet-update-mode-line)))))
 
 (defun vuiet-previous ()
