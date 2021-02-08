@@ -1,113 +1,64 @@
-# Vuiet, the music player and explorer for Emacs
+# Vuiet: music player and explorer
 
-Playing and discovering new music from within Emacs has never been easier. With
-vuiet you can,
-
-- Search and play any song, artist or create your own playlists which you can
-  listen.
-
-- Playlists can be created on a multitude of criteria. Most of the playlists
-contain a fixed number of songs which are played one after another. But some
-playlists are able to pick songs at random, indefinitely.
-
-- Playlists can be created from:
-  - songs from a given artist
-  - all the songs from an artist's given album
-  - songs from artists similar to a given artist, taken at random
-  - songs from artists with the given genre
-  - all the user loved songs, sequentially or at random
-  - songs from artists similar the user loved songs artists
-  - songs similar to the currently playing song
-
-- Take advantage of lastfm's huge music dataset to figure out what are an artist
-top songs, the similarities between artists, each artist music genre, a user
-loved songs and listening history, etc.
-
-- Search all the tracks on youtube and play them in the background with
-mpv, so not music files are necessary on your machine.
-
-- Display an artist or music genre in an interactive buffer from which you can
-  direcly play songs or explore similar artists or genres.
-
-- Display the lyrics for the currently playing song and save it in a local
-  database.
-  
-- Search through all the lyrics in your local database and select a song to play.
-
-Vuiet has the music discoverability factor of lastfm or spotify but with the
-comfort and power of Emacs.
-
-## Music player
-
-You can ask vuiet to play random tracks from random artists similar to an artist
-you already know and like. For example,
-
-```emacs-lisp
-(vuiet-play-artist-similar '("steven wilson"))
-```
-
-There is no limit to the number of artists specified in this call. New tracks
-will be selected from random artists similar to artists from this list. The
-number of similar artists and the number of top tracks to consider, among
-others, is fully [customizable](#customization).
-
-Or you can play random tracks from random artists that are tagged with any of
-the genres you specify,
-
-```emacs-lisp
-(vuiet-play-tag-similar '("classic rock" "80s"))
-```
-
-There are multiple variations on these two type of playlists, some of them
-random and basically infinite, others finite and sequential, some based on
-artists, other on genres or on lastfm user loved tracks or even single track play,
-given directly or from a lyrics search. The posibilities are endless. See the
-[playlists](#playlists) section for details.
-
-## Music browser
-
-Besides the player, there is also an explorer. I won't bore you with the
-details, just know that you can call it, and then explore everything on that
-page. Handy for picking out specific tracks for listening or for casually
-browsing similar artists or genres.
- 
+Browse artists, genres or albums with Emacs,
 ```emacs-lisp
 (vuiet-artist-info "steven wilson")
 ``` 
 
-![image](https://user-images.githubusercontent.com/8273519/74035278-a80b0900-49c2-11ea-90db-7602a5eef2fc.png)
+![image](https://user-images.githubusercontent.com/8273519/107241018-3c270a80-6a33-11eb-9fda-7213a617be2c.png)
 
-## Search, browse and play from lyrics
+Play an artist top songs,
+```emacs-lisp
+(vuiet-play-artist '("steven wilson"))
+```
 
-Google is nice for searching that song that's in your head. But sometimes you
-just can't find it. Either the lyrics are too general and Google finds only
-cr**, either your track is obscure enogh that nobody has heard about it.
+or tracks from similar artists, whole albums, loved tracks, or whole genres,
+```emacs-lisp
+(vuiet-play-artist-similar '("lost in kiev"))
+(vuiet-play-album "anathema" "one last goodbye")
+(vuiet-play-tag-similar '("classic rock" "80s" "progressive"))
+...
+```
 
-Either way, you can save the lyrics for each song you play with `vuiet`. All
-your saved lyrics are searchable, filterable and playable. Having a Google-like
-search for your local database of lyrics can come in handy.
+See [playlists](#playlists) for the all the play posibilities.
 
-Here, let me show you,
+## Play by lyrics
 
+Vuiet can also display the lyrics and search the lyrics database for a song to play,
 ```emacs-lisp
 (vuiet-play-track-by-lyrics "secret")
 ```
-
 ![image](https://user-images.githubusercontent.com/8273519/74035303-b527f800-49c2-11ea-8a32-15087b2f9e3e.png)
 
-`Vuiet` searched through all the lyrics in my database for the ones that contain
-`secret` in them.  Hit `<enter>` on any song from that list, and `vuiet` will
-play it. Nice, eh?
+## Other Features
 
-# Requirements
+Display the currently playing song in the mode-line,
+![image](https://user-images.githubusercontent.com/8273519/107240657-d33f9280-6a32-11eb-88b2-d9ddaaae8b3b.png)
 
-The recommendation system is based on [lastfm](https://last.fm). So you should
-have a lastfm account and the
-[lastfm.el](https://github.com/mihaiolteanu/lastfm.el) package installed
-first (see the lastfm.el README for details). The tracks themselves are taken from
-youtube via [youtube-dl](https://github.com/ytdl-org/youtube-dl/) and played
-with [mpv](https://mpv.io/) in the background (i.e. with the --no-video
-option). You should have both of them installed.
+Seek forward, backward, replay, play/pause, open currently playing song on youtube,
+```emacs-lisp
+(vuiet-seek-forward 15)
+(vuiet-playing-track-continue-on-youtube)
+...
+```
+
+See below the complete functionality for full details.
+
+# Installation Requirements
+
+- Install vuiet from [melpa](https://melpa.org/#/vuiet)
+- [youtube-dl](http://ytdl-org.github.io/youtube-dl/download.html),
+
+Install and update youtube-dl with these commands if vuiet suddently stops working as
+youtube changes its algoriths frequently to prevent third party users (us) from using it.
+```bash
+sudo curl -L https://yt-dl.org/downloads/latest/youtube-dl -o /usr/local/bin/youtube-dl
+sudo chmod a+rx /usr/local/bin/youtube-dl
+```
+- [lastfm](https://last.fm) account, API key, and the
+  [lastfm.el](https://github.com/mihaiolteanu/lastfm.el) package (follow the
+  instruction on the README page)
+- [mpv](https://mpv.io/)
 
 # Complete functionality
 
