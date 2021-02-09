@@ -1,4 +1,4 @@
-https://melpa.org/packages/vuiet-badge.svg
+![melpa](https://melpa.org/packages/vuiet-badge.svg)
 
 # Vuiet: music player and explorer
 
