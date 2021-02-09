@@ -1,13 +1,22 @@
+https://melpa.org/packages/vuiet-badge.svg
+
 # Vuiet: music player and explorer
+
+## Music Browser ([details](#browser))
 
 Browse artists, genres or albums with Emacs,
 ```emacs-lisp
+(vuiet-tag-info "progressive rock")
+(vuiet-album-info "steven wilson" "to the bone")
 (vuiet-artist-info "steven wilson")
+...
 ``` 
 
 ![image](https://user-images.githubusercontent.com/8273519/107241018-3c270a80-6a33-11eb-9fda-7213a617be2c.png)
 
-Play an artist top songs,
+## Music Player ([details](#playlists))
+
+Play an artist top songs, sequentially or randomly,
 ```emacs-lisp
 (vuiet-play-artist '("steven wilson"))
 ```
@@ -20,11 +29,9 @@ or tracks from similar artists, whole albums, loved tracks, or whole genres,
 ...
 ```
 
-See [playlists](#playlists) for the all the play posibilities.
+## Play by Lyrics
 
-## Play by lyrics
-
-Vuiet can also display the lyrics and search the lyrics database for a song to play,
+Display the lyrics and search the saved lyrics database for a song to play,
 ```emacs-lisp
 (vuiet-play-track-by-lyrics "secret")
 ```
@@ -32,25 +39,38 @@ Vuiet can also display the lyrics and search the lyrics database for a song to p
 
 ## Other Features
 
-Display the currently playing song in the mode-line,
-![image](https://user-images.githubusercontent.com/8273519/107240657-d33f9280-6a32-11eb-88b2-d9ddaaae8b3b.png)
+- Display the currently playing song in the mode-line,
 
-Seek forward, backward, replay, play/pause, open currently playing song on youtube,
+![mode-line](https://user-images.githubusercontent.com/8273519/107336357-ac7c6d00-6ac1-11eb-9789-064c1ccd5c1b.png)
+
+- Seek forward, backward, replay, play/pause, open currently playing song on
+youtube ([details](#player-interaction)),
 ```emacs-lisp
 (vuiet-seek-forward 15)
 (vuiet-playing-track-continue-on-youtube)
 ...
 ```
 
-See below the complete functionality for full details.
+- Scrobble songs to your last.fm profile and add songs to your list of last.fm
+  loved songs.
+
+- Search interactively for songs, artists or even albums (fill out part of the
+artist name -> TAB -> select the artist -> select the album -> album is now
+playing)
+
+![call vuiet-play-album](https://user-images.githubusercontent.com/8273519/107335138-3deadf80-6ac0-11eb-9c87-a820b166b813.png)
+![give artist name](https://user-images.githubusercontent.com/8273519/107335144-3e837600-6ac0-11eb-93de-9a48d528c03a.png)
+![tab for similar
+artists](https://user-images.githubusercontent.com/8273519/107335145-3e837600-6ac0-11eb-8c4e-506ddf9ee421.png)
+![select album](https://user-images.githubusercontent.com/8273519/107335147-3f1c0c80-6ac0-11eb-85b2-14daeb9ad118.png)
 
 # Installation Requirements
 
 - Install vuiet from [melpa](https://melpa.org/#/vuiet)
 - [youtube-dl](http://ytdl-org.github.io/youtube-dl/download.html),
 
-Install and update youtube-dl with these commands if vuiet suddently stops working as
-youtube changes its algoriths frequently to prevent third party users (us) from using it.
+Install and update youtube-dl with these commands if vuiet suddenly stops working as
+youtube changes its algorithms frequently to prevent third party users (us) from using it.
 ```bash
 sudo curl -L https://yt-dl.org/downloads/latest/youtube-dl -o /usr/local/bin/youtube-dl
 sudo chmod a+rx /usr/local/bin/youtube-dl
@@ -163,7 +183,7 @@ sudo chmod a+rx /usr/local/bin/youtube-dl
     Play tracks from random artists similar to a random artist from
     the list of user loved tracks.
 
-## Music Browser
+## Browser
 
 **vuiet-artist-info** *artist*
 
