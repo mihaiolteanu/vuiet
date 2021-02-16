@@ -905,7 +905,10 @@ ARTIST's top songs, where ARTIST is given in the minibuffer."
 Similar to `vuiet-play-track', but search for TRACK on last.fm
 first and then let the user select one of the results."
   (interactive "sTrack: ")
-  (vuiet--ivy-play-song (lastfm-track-search track)))
+  (alet (lastfm-track-search track)
+    (vuiet--ivy-play-song
+     ;; Transform into a list if last.fm returned only one result.
+     (if (listp (car it)) it (list it)))))
 
 ;;;###autoload
 (defun vuiet-play-track-by-lyrics (lyrics)
