@@ -140,7 +140,8 @@ key is pressed."
                                (setf ,artist (car s))
                                (delete-minibuffer-contents)
                                (exit-minibuffer)))))
-       (let ((mini (read-from-minibuffer
+       (let* ((enable-recursive-minibuffers t)
+              (mini (read-from-minibuffer
                     "Artist (TAB for completion): " nil keymap)))
          (unless (string-empty-p mini)
            ;; if completion was used, the minibuffer returns an empty string.
