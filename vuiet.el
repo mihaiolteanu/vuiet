@@ -141,7 +141,7 @@ key is pressed."
          (lambda () (interactive)
            (ivy-read "Artist: "
                      (lastfm-artist-search (minibuffer-contents))
-                     :action (lambda (s)   
+                     :action (lambda (s)
                                (setf ,artist (car s))
                                (delete-minibuffer-contents)
                                (exit-minibuffer)))))
@@ -506,7 +506,7 @@ It only considers tracks from the current playlist."
 
 (defun vuiet-replay ()
   "Play the currently playing track from the beginning."
-  (interactive)  
+  (interactive)
   (mpv-seek 1)
   (vuiet-update-mode-line))
 
@@ -726,7 +726,7 @@ am saving the track for the given youtube url in a hash table."
                  "--idle=yes"
                  "--keep-open=yes")
       (setf mpv-on-event-hook
-       (lambda (event)        
+       (lambda (event)
          (pcase (cdr (car event))
            ("playback-restart"
             (mpv-set-property "pause" "no"))
@@ -748,11 +748,11 @@ am saving the track for the given youtube url in a hash table."
     (if current-prefix-arg
         ;; Calling any play command with prefix arg, postpones the changing of
         ;; playlists until the current track ends.
-        (progn          
+        (progn
           (setf current-prefix-arg nil)
           ;; Keep only the currently playing track in the playlist.
           (mpv-run-command "playlist-clear")
-          (vuiet--mpv-add-track generator t))                        
+          (vuiet--mpv-add-track generator t))
       (mpv-set-property "pause" "yes")
       (vuiet--mpv-add-track generator nil))
     (vuiet--set-update-mode-line-timer)))
