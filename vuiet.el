@@ -61,7 +61,7 @@ If enabled, the mode-line is automatically updated after
 `vuiet-update-mode-line-interval' seconds. More specifically,
 `vuiet-update-mode-line' is called periodically while a track is
 playing to update it's current playback position."
-  :type '(boolean :tab "enabled")
+  :type '(boolean :tag "enabled")
   :group 'vuiet)
 
 (defcustom vuiet-update-mode-line-interval 10
