@@ -107,6 +107,11 @@ taking into consideration only the most recently loved tracks."
   :type '(number :tag "count")
   :group 'vuiet)
 
+(defcustom vuiet-youtube-dl-command "youtube-dl"
+  "The youtube-dl command."
+  :type '(string :tag "path")
+  :group 'vuiet)
+
 (cl-defstruct vuiet-track
   artist name duration)
 
@@ -698,7 +703,7 @@ am saving the track for the given youtube url in a hash table."
   (let ((track (vuiet--next-track generator)))
     (when track
       (set-process-filter
-       (start-process "ytdl" nil "youtube-dl"
+       (start-process "ytdl" nil vuiet-youtube-dl-command
                       (format "ytsearch:%s" (vuiet--track-as-string track))
                       "--get-id"
                       "--get-duration")

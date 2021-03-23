@@ -394,3 +394,7 @@ sudo chmod a+rx /usr/local/bin/youtube-dl
     A number higher than your actual lastfm loved tracks, will take
     all of them into consideration.  A lower values is useful for
     taking into consideration only the most recently loved tracks.
+
+**vuiet-youtube-dl-command** *"youtube-dl"*
+
+    The youtube-dl command.
