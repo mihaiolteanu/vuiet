@@ -55,6 +55,18 @@ of recently played tracks on last.fm."
   :type '(boolean :tag "enabled")
   :group 'vuiet)
 
+(defcustom vuiet-automatic-lyrics nil
+  "Enable/disable the saving of lyrics to the db for all tracks.
+If t, download the lyrics for every listened track and save them
+to db.  This is useful if you're listening to artists and tracks
+you already know and like.  If nil, the lyrics are only saved
+manually, on request, with the `vuiet-playing-track-lyrics'.
+This is useful if you're listening to new tracks, some of which
+you might not like.  Adding the lyrics of such tracks to the db
+would only mean adding garbage that you can do without."
+  :type '(boolean :tag "enabled")
+  :group 'vuiet)
+
 (defcustom vuiet-update-mode-line-automatically t
   "Enable/disable the automatic update of the mode-line.
 If enabled, the mode-line is automatically updated after
@@ -432,6 +444,28 @@ inside this buffer."
   (interactive)
   (setf vuiet-scrobble-enabled nil))
 
+(defun vuiet-enable-automatic-lyrics ()
+  "Enable saving the lyrics for all listened tracks to the db.
+See `vuiet-automatic-lyrics' for details."
+  (interactive)
+  (setf vuiet-automatic-lyrics t)
+  (message "Automatic lyrics for vuiet, enabled"))
+
+(defun vuiet-disable-automatic-lyrics ()
+  "Enable saving the lyrics for all listened tracks to the db.
+See `vuiet-automatic-lyrics' for details."
+  (interactive)
+  (setf vuiet-automatic-lyrics nil)
+  (message "Automatic lyrics for vuiet, disabled"))
+
+(defun vuiet-toggle-automatic-lyrics ()
+  "Toggle saving the lyrics for all listened tracks to the db.
+See `vuiet-automatic-lyrics' for details."
+  (interactive)
+  (setf vuiet-automatic-lyrics (not vuiet-automatic-lyrics))
+  (message (format "Automatic lyrics for vuiet, %s"
+                   (if vuiet-automatic-lyrics "enabled" "disabled"))))
+
 (defun vuiet-update-mode-line (&optional position)
   "Update the mode-line."
   (interactive)
@@ -741,7 +775,11 @@ am saving the track for the given youtube url in a hash table."
               (mpv-set-property "pause" "no")
               (when vuiet-scrobble-enabled
                 (run-at-time vuiet-scrobble-timeout nil
-                             #'vuiet--scrobble-track track))))))))
+                             #'vuiet--scrobble-track track))
+              (when vuiet-automatic-lyrics
+                (versuri-lyrics (vuiet-playing-artist)
+                                (vuiet-playing-track-name)
+                                (lambda (lyrics) "do nothing")))))))))
     ;; If the player was already started, change the generator and clear the
     ;; mpv playlist but leave the hooks and everything else in place.
     (setf gen generator)

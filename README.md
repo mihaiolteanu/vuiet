@@ -332,7 +332,22 @@ sudo chmod a+rx /usr/local/bin/youtube-dl
 
     Display the lyrics for the currently playing track in a new buffer.
     See `versuri-display' for the active keybindings inside this buffer.
-                    
+                   
+**vuiet-enable-automatic-lyrics**
+    
+    Enable saving the lyrics for all listened tracks to the db.
+    See `vuiet-automatic-lyrics' for details.
+    
+**vuiet-disable-automatic-lyrics**
+    
+    Disable saving the lyrics for all listened tracks to the db.
+    See `vuiet-automatic-lyrics' for details.
+    
+**vuiet-toggle-automatic-lyrics**
+    
+    Toggle saving the lyrics for all listened tracks to the db.
+    See `vuiet-automatic-lyrics' for details.
+                   
 **vuiet-update-mode-line**
 
     Update the mode line.
@@ -348,6 +363,17 @@ sudo chmod a+rx /usr/local/bin/youtube-dl
     Enable/disable last.fm scrobbling.
     Decide if the currently playing track should appear in your list
     of recently played tracks on last.fm.
+
+**vuiet-automatic-lyrics** *nil*
+
+    Enable/disable the saving of lyrics to the db for all tracks.
+    If t, download the lyrics for every listened track and save them
+    to db.  This is useful if you're listening to artists and tracks
+    you already know and like.  If nil, the lyrics are only saved
+    manually, on request, with the `vuiet-playing-track-lyrics'.
+    This is useful if you're listening to new tracks, some of which
+    you might not like.  Adding the lyrics of such tracks to the db
+    would only mean adding garbage that you can do without.
 
 **vuiet-update-mode-line-automatically** t
 
