@@ -1,8 +1,36 @@
+# Vuiet
+
 ![melpa](https://melpa.org/packages/vuiet-badge.svg)
 
-# Vuiet: music player and explorer
+Vuiet is a music player and explorer for Emacs users. It is similar in scope to
+[lastfm](https://last.fm) on which it is based. All tracks are played from
+youtube using mpv in the background and music info taken from last.fm. Vuiet
+supports the "discovery mode", where it lets you create your own playlists based
+on artist, genre or your loved songs similarities. Or, you can specify single
+tracks, top tracks from a given artist, known albums, etc. There is also a
+lyrics database that is optionally updated with each track you play and this
+database can be searched interactively and played from.
 
-## Music Browser ([details](#browser))
+# Table of Contents
+
+- [Vuiet](#vuiet)
+- [Overview](#overview)
+  * [Music Browser](#music-browser)
+  * [Music Player](#music-player)
+  * [Play by Lyrics](#play-by-lyrics)
+  * [Other Features](#other-features)
+- [Installation Requirements](#installation-requirements)
+- [Complete functionality](#complete-functionality)
+  * [Playlists](#playlists)
+  * [Browser](#browser)
+  * [Player Interaction](#player-interaction)
+  * [Customization](#customization)
+
+(Table of contents generated with [markdown-toc](http://ecotrust-canada.github.io/markdown-toc/))
+
+# Overview
+
+## Music Browser
 
 Browse artists, genres or albums with Emacs,
 ```emacs-lisp
@@ -14,7 +42,7 @@ Browse artists, genres or albums with Emacs,
 
 ![image](https://user-images.githubusercontent.com/8273519/107241018-3c270a80-6a33-11eb-9fda-7213a617be2c.png)
 
-## Music Player ([details](#playlists))
+## Music Player
 
 Play an artist top songs, sequentially or randomly,
 ```emacs-lisp
