@@ -355,10 +355,10 @@ s        Choose a song to play, with ivy."
 
       (vuiet--local-set-keys
         ("i" . (progn (kill-buffer)
-                      (vuiet-loved-tracks-info (1+ page))))
+                      (vuiet-loved-tracks-info :page (1+ page) :n n)))
         ("u" . (when (> page 1)
                  (kill-buffer)
-                 (vuiet-loved-tracks-info (1- page))))
+                 (vuiet-loved-tracks-info :page (1- page) :n n)))
         ("s" . (vuiet--ivy-play-song songs)))))))
 
 (defun vuiet-album-info (&optional artist album)
