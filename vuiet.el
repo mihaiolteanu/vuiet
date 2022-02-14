@@ -115,6 +115,14 @@ This value is also used in the artist info page (called by
   :type '(number :tag "top-albums-limit")
   :group 'vuiet)
 
+(defcustom vuiet-artist-info-show-top-albums nil
+  "Display the artist top albums in the artist info
+buffer (created when calling `vuiet-artist-info'). This adds an
+extra call to last.fm which, depending on your system, you might
+feel it like an unnecessary lag."
+  :type '(boolean :tag "info-show-top-albums")
+  :group 'vuiet)
+
 (defcustom vuiet-tag-artists-limit 15
   "Number of artists for the given tag.
 When considering the top artists for a given tag, take as many
@@ -274,6 +282,16 @@ l   visit the artist's lastfm page."
                do (insert
                    (format "%2s. [[elisp:(vuiet-play '((\"%s\" \"%s\")))][%s]]\n"
                            i artist song song)))
+
+      (when vuiet-artist-info-show-top-albums
+        (insert "\n\n* Top Albums: \n")
+        (cl-loop for i from 1
+                 for raw-album in (lastfm-artist-get-top-albums
+                                   artist :limit vuiet-artist-top-albums-limit)
+                 as album = (s-replace-all '(("(" . "") (")" . "")) (car raw-album))
+                 do (insert
+                     (format "%2s. [[elisp:(vuiet-album-info \"%s\" \"%s\")][%s]]\n"
+                             i artist album album))))
 
       (vuiet--local-set-keys
         ("p" . (vuiet-play songs))

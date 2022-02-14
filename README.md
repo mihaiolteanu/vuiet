@@ -442,6 +442,13 @@ sudo chmod a+rx /usr/local/bin/youtube-dl
     This value is also used in the artist info page (called by
     `vuiet-artist-info') to display the number of top albums.
 
+**vuiet-artist-info-show-top-albums** nil
+
+    Display the artist top albums in the artist info
+    buffer (created when calling `vuiet-artist-info'). This adds an
+    extra call to last.fm which, depending on your system, you might
+    feel it like an unnecessary lag.
+
 **vuiet-tag-artists-limit** *15*
 
     Number of artists for the given tag.
