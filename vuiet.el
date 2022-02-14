@@ -108,6 +108,13 @@ as a result."
   :type '(number :tag "count")
   :group 'vuiet)
 
+(defcustom vuiet-artist-top-albums-limit 10
+  "Number of top albums for the given artist.
+This value is also used in the artist info page (called by
+`vuiet-artist-info') to display the number of top albums."
+  :type '(number :tag "top-albums-limit")
+  :group 'vuiet)
+
 (defcustom vuiet-tag-artists-limit 15
   "Number of artists for the given tag.
 When considering the top artists for a given tag, take as many
@@ -372,7 +379,8 @@ l   save lyrics for this album."
   (vuiet--artist-from-minibuffer-if-nil artist)
   (unless album
     (ivy-read (format "%s Album:" artist)
-            (lastfm-artist-get-top-albums artist)
+              (lastfm-artist-get-top-albums
+               artist :limit vuiet-artist-top-albums-limit)
             :action (lambda (a)
                       (setf album (car a)))))
   (vuiet--with-vuiet-buffer (format "%s - %s" artist album)
@@ -407,7 +415,8 @@ The album is displayed in a dedicated buffer.  See
 inside this buffer."
   (interactive "sArtist: ")
   (ivy-read "Select Album: "
-            (lastfm-artist-get-top-albums artist)
+            (lastfm-artist-get-top-albums
+             artist :limit vuiet-artist-top-albums-limit)
             :action (lambda (album)
                       (vuiet-album-info artist (car album)))))
 
@@ -852,7 +861,8 @@ minibuffer."
       (vuiet-play (lastfm-album-get-info artist album))
     (vuiet--artist-from-minibuffer-if-nil artist)
     (ivy-read (format "Play %s Album" artist)
-       (lastfm-artist-get-top-albums artist)
+              (lastfm-artist-get-top-albums
+               artist :limit vuiet-artist-top-albums-limit)
        :action (lambda (album)
                  (vuiet-play
                   (lastfm-album-get-info artist (car album)))))))

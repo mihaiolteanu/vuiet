@@ -436,6 +436,12 @@ sudo chmod a+rx /usr/local/bin/youtube-dl
     scrobbled songs and youtube will find something totally unrelated
     as a result.
 
+**vuiet-artist-top-albums-limit** *10*
+
+    Number of top albums for the given artist.
+    This value is also used in the artist info page (called by
+    `vuiet-artist-info') to display the number of top albums.
+
 **vuiet-tag-artists-limit** *15*
 
     Number of artists for the given tag.
