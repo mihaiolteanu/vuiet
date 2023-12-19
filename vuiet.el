@@ -1,10 +1,10 @@
 ;;; vuiet.el --- The music player and explorer for Emacs -*- lexical-binding: t -*-
 
-;; Copyright (C) 2019-2020 Mihai Olteanu
+;; Copyright (C) 2019-2024 Mihai Olteanu
 
 ;; Author: Mihai Olteanu <mihai_olteanu@fastmail.fm>
 ;; Version: 1.0
-;; Package-Requires: ((emacs "26.1") (lastfm "1.1") (versuri "1.0") (s "1.12.0") (bind-key "2.4") (mpv "0.1.0"))
+;; Package-Requires: ((emacs "26.1") (lastfm "1.1") (versuri "1.0") (s "1.12.0") (bind-key "2.4") (mpv "0.1.0") (ivy "0.14.2"))
 ;; Keywords: multimedia
 ;; URL: https://github.com/mihaiolteanu/vuiet
 
@@ -41,6 +41,7 @@
 (require 'bind-key)
 (require 'mpv)
 (require 'generator)
+(require 'ivy)
 
 (defgroup vuiet ()
   "Emacs music player."
