@@ -94,18 +94,11 @@ artists](https://user-images.githubusercontent.com/8273519/107335145-3e837600-6a
 
 # Installation Requirements
 
-- Install vuiet from [melpa](https://melpa.org/#/vuiet)
-- [youtube-dl](http://ytdl-org.github.io/youtube-dl/download.html),
-
-Install and update youtube-dl with these commands if vuiet suddenly stops working as
-youtube changes its algorithms frequently to prevent third party users (us) from using it.
-```bash
-sudo curl -L https://yt-dl.org/downloads/latest/youtube-dl -o /usr/local/bin/youtube-dl
-sudo chmod a+rx /usr/local/bin/youtube-dl
-```
-- [lastfm](https://last.fm) account, API key, and the
-  [lastfm.el](https://github.com/mihaiolteanu/lastfm.el) package (follow the
-  instruction on the README page)
+- [vuiet](https://melpa.org/#/vuiet)
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp)
+- [lastfm](https://last.fm) account plus an API key (see lastfm.el README for details)
+- [lastfm.el](https://github.com/mihaiolteanu/lastfm.el) (follow the
+  instruction on the lastfm.el README page)
 - [mpv](https://mpv.io/)
 
 # Complete functionality

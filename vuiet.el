@@ -139,7 +139,7 @@ taking into consideration only the most recently loved tracks."
   :type '(number :tag "count")
   :group 'vuiet)
 
-(defcustom vuiet-youtube-dl-command "youtube-dl"
+(defcustom vuiet-youtube-dl-command "yt-dlp"
   "The youtube-dl command."
   :type '(string :tag "path")
   :group 'vuiet)
